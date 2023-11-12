@@ -2,10 +2,12 @@ package tiem625.anonimizer.commonterms;
 
 import java.util.Objects;
 
+import static tiem625.anonimizer.commonterms.namerules.SimpleASCIINameValidator.validOrThrow;
+
 public class BatchName {
 
     public static BatchName of(String name) {
-        return new BatchName(name);
+        return new BatchName(validOrThrow(name));
     }
 
     private BatchName(String name) {

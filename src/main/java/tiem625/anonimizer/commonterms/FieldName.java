@@ -2,10 +2,12 @@ package tiem625.anonimizer.commonterms;
 
 import java.util.Objects;
 
+import static tiem625.anonimizer.commonterms.namerules.SimpleASCIINameValidator.validOrThrow;
+
 public class FieldName {
 
     public static FieldName of(String name) {
-        return new FieldName(name);
+        return new FieldName(validOrThrow(name));
     }
 
     private FieldName(String name) {
