@@ -32,6 +32,11 @@ public class SimpleASCIINameValidator {
         return Character.isDigit(name.charAt(0));
     }
 
+    private static boolean hasInvalidCharacters(String name) {
+        var allCharsValid = name.chars().allMatch(ALLOWED_CHARS_SET::contains);
+        return !allCharsValid;
+    }
+
     private static final Stream<Integer> ALLOWED_LETTERS_STREAM = Stream.concat(
             IntStream.rangeClosed('A', 'Z').boxed(),
             IntStream.rangeClosed('a', 'z').boxed()
@@ -41,9 +46,4 @@ public class SimpleASCIINameValidator {
     );
     private static final Set<Integer> ALLOWED_CHARS_SET = Stream.concat(ALLOWED_LETTERS_STREAM, ALLOWED_SYMBOLS_STREAM)
             .collect(Collectors.toSet());
-
-    private static boolean hasInvalidCharacters(String name) {
-        var allCharsValid = name.chars().allMatch(ALLOWED_CHARS_SET::contains);
-        return !allCharsValid;
-    }
 }

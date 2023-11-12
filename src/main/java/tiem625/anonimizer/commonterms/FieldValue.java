@@ -5,11 +5,33 @@ import java.util.Objects;
 public class FieldValue {
 
     public static FieldValue of(FieldType type, Object content) {
-        throw new UnsupportedOperationException("TODO");
+        if (content == null && type == null) {
+            throw new IllegalArgumentException("Either type or content must be known for field value");
+        }
+        if (content == null) {
+            return new FieldValue(type, content);
+        }
+        if (type == null) {
+            return ofTyped(content);
+        }
+        var inferredType = ofTyped(content).type();
+        if (type != inferredType) {
+            throw new IllegalArgumentException("Supplied type " + type + "disagrees with actual content type " + inferredType);
+        }
+        return new FieldValue(type, content);
     }
 
     public static FieldValue ofTyped(Object content) {
-        throw new UnsupportedOperationException("TODO");
+        if (content == null) {
+            throw new IllegalArgumentException("Cannot have untyped null field value");
+        }
+        if (content instanceof Number) {
+            return new FieldValue(FieldType.NUMBER, content);
+        }
+        if (content instanceof String) {
+            return new FieldValue(FieldType.TEXT, content);
+        }
+        throw new IllegalArgumentException("Not sure what to do with content of type " + content.getClass());
     }
 
     private final FieldType type;
