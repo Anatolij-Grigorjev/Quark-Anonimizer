@@ -1,4 +1,4 @@
-package tiem625;
+package tiem625.anonimizer;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 
