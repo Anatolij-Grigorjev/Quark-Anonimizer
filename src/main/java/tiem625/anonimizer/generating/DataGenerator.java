@@ -12,14 +12,14 @@ public interface DataGenerator {
 
     void generate(@Nonnull DataGenerationRules rules);
 
-    class DataGenerationRules {
-        BatchName batchName;
-        List<DataFieldSpec> fieldSpecs;
-        Amount amount;
-    }
+    record DataGenerationRules(
+            BatchName batchName,
+            List<DataFieldSpec> fieldSpecs,
+            Amount amount
+    ) {}
 
-    class DataFieldSpec {
-        FieldName fieldName;
-        FieldType fieldType;
-    }
+    record DataFieldSpec(
+            FieldName fieldName,
+            FieldType fieldType
+    ) {}
 }
