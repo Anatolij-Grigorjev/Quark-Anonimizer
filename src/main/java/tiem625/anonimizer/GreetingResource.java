@@ -1,23 +1,21 @@
 package tiem625.anonimizer;
 
-import io.agroal.api.AgroalDataSource;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-
-import java.sql.SQLException;
+import org.jooq.DSLContext;
 
 @Path("/hello")
 public class GreetingResource {
 
     @Inject
-    private AgroalDataSource dataSource;
+    private DSLContext dslContext;
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    public String hello() throws SQLException {
-        return "Mysql connection OK: " + dataSource.isHealthy(true);
+    public String hello() {
+        return "Mysql connection OK: " + dslContext.configuration();
     }
 }
