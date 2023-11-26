@@ -11,7 +11,7 @@ import org.jooq.DSLContext;
 public class GreetingResource {
 
     @Inject
-    private DSLContext dslContext;
+    DSLContext dslContext;
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)

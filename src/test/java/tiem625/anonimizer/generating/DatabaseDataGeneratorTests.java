@@ -1,5 +1,7 @@
 package tiem625.anonimizer.generating;
 
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -7,14 +9,20 @@ import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.generating.DataGenerator.DataGenerationRules;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
 import tiem625.anonimizer.testsupport.TestData;
+import tiem625.anonimizer.testsupport.TestDbContext;
 
 import java.util.List;
 
 @PrettyTestNames
+@QuarkusTest
 public class DatabaseDataGeneratorTests {
 
-    private TestData data;
+    TestData data;
+
     private DataGenerator dataGeneratorImpl;
+
+    @Inject
+    TestDbContext db;
 
     @BeforeEach
     void setupService() {
@@ -37,7 +45,14 @@ public class DatabaseDataGeneratorTests {
         Assertions.assertThrows(IllegalArgumentException.class, () -> dataGeneratorImpl.generate(specAmountNull));
     }
 
+    @Test
+    void spec_with_no_amount_creates_empty_table() {
+        var batch = data.TST_BATCH;
+        var spec = new DataGenerationRules(batch, List.of(data.textFieldSpec("field1")), Amount.NONE);
 
+        dataGeneratorImpl.generate(spec);
 
-
+        Assertions.assertEquals(true, db.batchExists(batch));
+        Assertions.assertEquals(0, db.getBatchRecordsCount(batch).asNumber());
+    }
 }
