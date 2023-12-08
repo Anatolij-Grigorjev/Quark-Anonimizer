@@ -33,10 +33,10 @@ public class DatabaseDataGeneratorTests {
     @Test
     void incomplete_spec_causes_exception() {
         DataGenerationRules specNull = null;
-        var specNoBatchName = new DataGenerationRules(null, List.of(), Amount.NONE);
-        var specNoFieldsList = new DataGenerationRules(data.TST_BATCH, null, Amount.NONE);
-        var specFieldsListEmpty = new DataGenerationRules(data.TST_BATCH, List.of(), Amount.NONE);
-        var specAmountNull = new DataGenerationRules(data.TST_BATCH, List.of(data.textFieldSpec("field1")), null);
+        DataGenerationRules specNoBatchName = new DataGenerationRules(null, List.of(), Amount.NONE);
+        DataGenerationRules specNoFieldsList = new DataGenerationRules(data.TST_BATCH, null, Amount.NONE);
+        DataGenerationRules specFieldsListEmpty = new DataGenerationRules(data.TST_BATCH, List.of(), Amount.NONE);
+        DataGenerationRules specAmountNull = new DataGenerationRules(data.TST_BATCH, List.of(data.textFieldSpec("field1")), null);
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> dataGeneratorImpl.generate(specNull));
         Assertions.assertThrows(IllegalArgumentException.class, () -> dataGeneratorImpl.generate(specNoBatchName));
@@ -48,7 +48,7 @@ public class DatabaseDataGeneratorTests {
     @Test
     void spec_with_no_amount_creates_empty_table() {
         var batch = data.TST_BATCH;
-        var spec = new DataGenerationRules(batch, List.of(data.textFieldSpec("field1")), Amount.NONE);
+        var spec = data.dataGenerationRules(batch, data.textFieldSpecsList("field1"), Amount.NONE);
 
         dataGeneratorImpl.generate(spec);
 
