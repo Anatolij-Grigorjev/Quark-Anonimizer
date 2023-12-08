@@ -7,6 +7,9 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.commonterms.BatchName;
+import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
+
+import java.util.List;
 
 @ApplicationScoped
 public class TestDbContext {
@@ -26,5 +29,13 @@ public class TestDbContext {
 
     public Amount getBatchRecordsCount(BatchName tableName) {
         return Amount.of(db.fetchCount(DSL.table(tableName.asString())));
+    }
+
+    public List<DataFieldSpec> getBatchFields(BatchName batchName) {
+        var result = db.select(DSL.asterisk())
+                .from(DSL.table(batchName.asString()))
+                .limit(0)
+                .fetch();
+        // TODO: result.recordType -> fields -> name + type
     }
 }

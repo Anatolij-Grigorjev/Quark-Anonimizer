@@ -24,8 +24,12 @@ public class TestData {
 
     public final BatchName TST_BATCH = BatchName.of("tst_batch");
 
+    public DataFieldSpec fieldSpec(String name, FieldType fieldType) {
+        return new DataFieldSpec(FieldName.of(name), fieldType);
+    }
+
     public DataFieldSpec textFieldSpec(String name) {
-        return new DataFieldSpec(FieldName.of(name), FieldType.TEXT);
+        return fieldSpec(name, FieldType.TEXT);
     }
 
     public Amount randomAmount() {
@@ -44,12 +48,16 @@ public class TestData {
 
     public List<DataFieldSpec> fieldSpecsList(Map<String, FieldType> fieldSpecsMap) {
         return fieldSpecsMap.entrySet().stream()
-                .map(entry -> new DataFieldSpec(FieldName.of(entry.getKey()), entry.getValue()))
+                .map(entry -> fieldSpec(entry.getKey(), entry.getValue()))
                 .toList();
     }
 
     public DataGenerationRules dataGenerationRules(Map<String, FieldType> fieldSpecsMap) {
-        return dataGenerationRules(TST_BATCH, fieldSpecsMap, randomAmount());
+        return dataGenerationRules(fieldSpecsList(fieldSpecsMap));
+    }
+
+    public DataGenerationRules dataGenerationRules(List<DataFieldSpec> fieldSpecList) {
+        return dataGenerationRules(TST_BATCH, fieldSpecList, randomAmount());
     }
 
     public DataGenerationRules dataGenerationRules(String batchName, Map<String, FieldType> fieldSpecsMap, int amount) {

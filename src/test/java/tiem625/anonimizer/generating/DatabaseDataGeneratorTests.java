@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tiem625.anonimizer.commonterms.Amount;
+import tiem625.anonimizer.commonterms.BatchName;
+import tiem625.anonimizer.commonterms.FieldType;
+import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.generating.DataGenerator.DataGenerationRules;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
 import tiem625.anonimizer.testsupport.TestData;
@@ -54,5 +57,27 @@ public class DatabaseDataGeneratorTests {
 
         Assertions.assertEquals(true, db.batchExists(batch));
         Assertions.assertEquals(0, db.getBatchRecordsCount(batch).asNumber());
+    }
+
+    @Test
+    void spec_creates_table_with_correct_field_names_and_types() {
+        var idFieldSpec = data.fieldSpec("id", FieldType.NUMBER);
+        var usernameFieldSpec = data.fieldSpec("username", FieldType.TEXT);
+        var emailFieldSpec = data.fieldSpec("email", FieldType.TEXT);
+        var rankFieldSpec = data.fieldSpec("rank", FieldType.NUMBER);
+        var fieldSpecs = List.of(
+            idFieldSpec,
+            usernameFieldSpec,
+            emailFieldSpec,
+            rankFieldSpec
+        );
+        var dataGenRules = data.dataGenerationRules(fieldSpecs);
+        BatchName batchName = dataGenRules.batchName();
+
+        dataGeneratorImpl.generate(dataGenRules);
+
+        Assertions.assertTrue(db.batchExists(batchName));
+        List<DataFieldSpec> batchFields = db.getBatchFields(batchName);
+        Assertions.assertEquals(fieldSpecs, batchFields);
     }
 }
