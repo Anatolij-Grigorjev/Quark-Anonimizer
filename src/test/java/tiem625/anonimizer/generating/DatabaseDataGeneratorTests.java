@@ -77,7 +77,7 @@ public class DatabaseDataGeneratorTests {
         dataGeneratorImpl.generate(dataGenRules);
 
         Assertions.assertTrue(db.batchExists(batchName));
-        List<DataFieldSpec> batchFields = db.getBatchFields(batchName);
+        List<DataFieldSpec> batchFields = db.getBatchFieldSpecs(batchName);
         Assertions.assertEquals(fieldSpecs, batchFields);
     }
 }
