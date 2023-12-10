@@ -1,6 +1,5 @@
 package tiem625.anonimizer.anonimizing;
 
-import tiem625.anonimizer.AnonimizerError;
 import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.commonterms.BatchName;
 import tiem625.anonimizer.commonterms.FieldName;
