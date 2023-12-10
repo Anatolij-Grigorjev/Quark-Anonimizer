@@ -5,9 +5,11 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tiem625.anonimizer.DataObject;
 import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.commonterms.BatchName;
 import tiem625.anonimizer.commonterms.FieldType;
+import tiem625.anonimizer.commonterms.FieldValue;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.generating.DataGenerator.DataGenerationRules;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
@@ -15,6 +17,7 @@ import tiem625.anonimizer.testsupport.TestData;
 import tiem625.anonimizer.testsupport.TestDbContext;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @PrettyTestNames
 @QuarkusTest
@@ -79,5 +82,40 @@ public class DatabaseDataGeneratorTests {
         Assertions.assertTrue(db.batchExists(batchName));
         List<DataFieldSpec> batchFields = db.getBatchFieldSpecs(batchName);
         Assertions.assertEquals(fieldSpecs, batchFields);
+    }
+
+    @Test
+    void spec_creates_correct_number_of_typed_records() {
+        var idFieldSpec = data.fieldSpec("id", FieldType.NUMBER);
+        var userNameFieldSpec = data.fieldSpec("username", FieldType.TEXT);
+        var amount = Amount.of(15);
+        var rules = data.dataGenerationRules(data.TST_BATCH, List.of(idFieldSpec, userNameFieldSpec), amount);
+
+        dataGeneratorImpl.generate(rules);
+
+        Assertions.assertEquals(db.getBatchRecordsCount(rules.batchName()), amount);
+    }
+
+    @Test
+    void spec_creates_different_fake_values() {
+        var idFieldSpec = data.fieldSpec("id", FieldType.NUMBER);
+        var usernameFieldSpec = data.fieldSpec("username", FieldType.TEXT);
+        var amount = Amount.of(15);
+        var rules = data.dataGenerationRules(data.TST_BATCH, List.of(idFieldSpec, usernameFieldSpec), amount);
+
+        dataGeneratorImpl.generate(rules);
+
+        List<DataObject> batchValues = db.getAllBatchValues(rules.batchName());
+
+        var differentIdValues = batchValues.stream()
+                .map(data -> data.getValue(idFieldSpec.fieldName()))
+                .map(FieldValue::content)
+                .collect(Collectors.toSet());
+        var differentUsernameValues = batchValues.stream()
+                .map(data -> data.getValue(usernameFieldSpec.fieldName()))
+                .map(FieldValue::content)
+                .collect(Collectors.toSet());
+        Assertions.assertTrue(differentIdValues.size() > 1);
+        Assertions.assertTrue(differentUsernameValues.size() > 1);
     }
 }
