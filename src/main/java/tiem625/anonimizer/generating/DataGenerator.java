@@ -20,6 +20,11 @@ public interface DataGenerator {
 
     record DataFieldSpec(
             FieldName fieldName,
-            FieldType fieldType
-    ) {}
+            FieldType fieldType,
+            List<FieldConstraint> fieldConstraints
+    ) {
+        public DataFieldSpec(FieldName fieldName, FieldType fieldType) {
+            this(fieldName, fieldType, List.of());
+        }
+    }
 }

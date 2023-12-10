@@ -6,6 +6,7 @@ import tiem625.anonimizer.commonterms.FieldName;
 import tiem625.anonimizer.commonterms.FieldType;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.generating.DataGenerator.DataGenerationRules;
+import tiem625.anonimizer.generating.FieldConstraint;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,8 +25,8 @@ public class TestData {
 
     public final BatchName TST_BATCH = BatchName.of("tst_batch");
 
-    public DataFieldSpec fieldSpec(String name, FieldType fieldType) {
-        return new DataFieldSpec(FieldName.of(name), fieldType);
+    public DataFieldSpec fieldSpec(String name, FieldType type, FieldConstraint... constraints) {
+        return new DataFieldSpec(FieldName.of(name), type, Arrays.asList(constraints));
     }
 
     public DataFieldSpec textFieldSpec(String name) {
