@@ -14,6 +14,10 @@ import tiem625.anonimizer.testsupport.TestDbContext;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static tiem625.anonimizer.generating.FieldConstraint.NOT_NULL;
+import static tiem625.anonimizer.generating.FieldConstraint.UNIQUE;
 
 @PrettyTestNames
 @QuarkusTest
@@ -59,11 +63,11 @@ public class DatabaseDataGeneratorTests {
     }
 
     @Test
-    void spec_creates_table_with_correct_field_names_and_types() {
-        var idFieldSpec = data.fieldSpec("id", FieldType.NUMBER);
-        var usernameFieldSpec = data.fieldSpec("username", FieldType.TEXT);
+    void spec_creates_table_with_correct_field_names_types_and_constraints() {
+        var idFieldSpec = data.fieldSpec("id", FieldType.NUMBER, UNIQUE, NOT_NULL);
+        var usernameFieldSpec = data.fieldSpec("username", FieldType.TEXT, UNIQUE);
         var emailFieldSpec = data.fieldSpec("email", FieldType.TEXT);
-        var rankFieldSpec = data.fieldSpec("rank", FieldType.NUMBER);
+        var rankFieldSpec = data.fieldSpec("rank", FieldType.NUMBER, NOT_NULL);
         var fieldSpecs = List.of(
             idFieldSpec,
             usernameFieldSpec,
@@ -77,7 +81,14 @@ public class DatabaseDataGeneratorTests {
 
         Assertions.assertTrue(db.batchExists(batchName));
         List<DataFieldSpec> batchFields = db.getBatchFieldSpecs(batchName);
-        Assertions.assertEquals(fieldSpecs, batchFields);
+        Assertions.assertEquals(fieldSpecs.size(), batchFields.size());
+        IntStream.range(0, fieldSpecs.size()).forEachOrdered(idx -> {
+            DataFieldSpec expectedFieldSpec = fieldSpecs.get(idx);
+            DataFieldSpec dbFieldSpec = batchFields.get(idx);
+            Assertions.assertEquals(expectedFieldSpec.fieldName(), dbFieldSpec.fieldName());
+            Assertions.assertEquals(expectedFieldSpec.fieldType(), dbFieldSpec.fieldType());
+            Assertions.assertEquals(expectedFieldSpec.fieldConstraints(), dbFieldSpec.fieldConstraints());
+        });
     }
 
     @Test

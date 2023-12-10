@@ -2,17 +2,14 @@ package tiem625.anonimizer.testsupport;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.jooq.DSLContext;
-import org.jooq.Field;
 import org.jooq.Record;
-import org.jooq.exception.DataAccessException;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import tiem625.anonimizer.commonterms.*;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
+import tiem625.anonimizer.generating.FieldConstraint;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -22,13 +19,7 @@ public class TestDbContext {
     DSLContext db;
 
     public boolean batchExists(BatchName table) {
-        try {
-            db.selectOne().from(table.asString()).fetchOne();
-            return true;
-        } catch (DataAccessException sqlError) {
-            sqlError.printStackTrace();
-            return false;
-        }
+        return db.meta().getTables(table.asString()).size() > 0;
     }
 
     public Amount getBatchRecordsCount(BatchName tableName) {
@@ -36,19 +27,49 @@ public class TestDbContext {
     }
 
     public List<DataFieldSpec> getBatchFieldSpecs(BatchName batchName) {
-        var result = db.select(DSL.asterisk())
-                .from(DSL.table(batchName.asString()))
-                .limit(0)
-                .fetch();
-        return Arrays.stream(result.recordType().fields())
-                .map(field -> new DataFieldSpec(FieldName.of(field.getName()), resolveFieldType(field)))
-                .toList();
+        var table = db.meta().getTables(batchName.asString()).get(0);
+        return extractTableFieldSpecs(table);
     }
 
     public List<DataObject> getAllBatchValues(BatchName batchName) {
         var result = db.select(DSL.asterisk()).from(DSL.table(batchName.asString())).fetch();
 
         return result.stream().map(this::recordAsData).toList();
+    }
+
+    private List<DataFieldSpec> extractTableFieldSpecs(Table<?> dbTable) {
+        var uniqueConstraints = dbTable.getUniqueKeys();
+        return dbTable.fieldStream().map(dbField -> {
+            var fieldConstraints = resolveFieldConstraints(dbField, uniqueConstraints);
+            return new DataFieldSpec(FieldName.of(dbField.getName()), resolveFieldType(dbField), fieldConstraints);
+        }).toList();
+    }
+
+    private List<FieldConstraint> resolveFieldConstraints(Field<?> dbField,
+                                                          List<? extends UniqueKey<?>> tableUniqueConstrains) {
+        var constraints = new ArrayList<FieldConstraint>();
+        if (!fieldIsNullable(dbField)) {
+            constraints.add(FieldConstraint.NOT_NULL);
+        }
+        if (fieldIsUniqueInTable(dbField, tableUniqueConstrains)) {
+            constraints.add(FieldConstraint.UNIQUE);
+        }
+
+        return constraints;
+    }
+
+    private boolean fieldIsNullable(Field<?> dbField) {
+        return dbField.getDataType().nullable();
+    }
+
+    private boolean fieldIsUniqueInTable(Field<?> dbField, List<? extends UniqueKey<?>> tableUniqueConstrains) {
+        return tableUniqueConstrains.stream()
+                .filter(uniqueKey -> uniqueKey.getFields().size() == 1)
+                .anyMatch(uniqueKey -> {
+                    var uniqueField = uniqueKey.getFields().get(0);
+                    return Objects.equals(uniqueField.getName(), dbField.getName())
+                            && Objects.equals(resolveFieldType(uniqueField), resolveFieldType(dbField));
+                });
     }
 
     private DataObject recordAsData(Record dbRecord) {
