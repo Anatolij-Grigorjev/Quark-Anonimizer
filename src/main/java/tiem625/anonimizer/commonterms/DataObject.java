@@ -1,7 +1,4 @@
-package tiem625.anonimizer;
-
-import tiem625.anonimizer.commonterms.FieldName;
-import tiem625.anonimizer.commonterms.FieldValue;
+package tiem625.anonimizer.commonterms;
 
 import java.util.Map;
 import java.util.NoSuchElementException;

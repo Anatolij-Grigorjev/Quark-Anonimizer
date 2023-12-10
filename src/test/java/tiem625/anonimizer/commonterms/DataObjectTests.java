@@ -1,4 +1,4 @@
-package tiem625.anonimizer;
+package tiem625.anonimizer.commonterms;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
