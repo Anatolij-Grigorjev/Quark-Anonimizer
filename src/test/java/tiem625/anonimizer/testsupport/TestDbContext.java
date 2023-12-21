@@ -37,6 +37,10 @@ public class TestDbContext {
         return result.stream().map(this::recordAsData).toList();
     }
 
+    public void createBatch(BatchName batchName) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
     private List<DataFieldSpec> extractTableFieldSpecs(Table<?> dbTable) {
         var uniqueConstraints = dbTable.getUniqueKeys();
         return dbTable.fieldStream().map(dbField -> {
