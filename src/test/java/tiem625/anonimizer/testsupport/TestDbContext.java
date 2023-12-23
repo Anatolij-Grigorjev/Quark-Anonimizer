@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import org.jooq.Record;
 import org.jooq.*;
 import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 import tiem625.anonimizer.commonterms.*;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.generating.FieldConstraint;
@@ -17,6 +18,8 @@ public class TestDbContext {
 
     @Inject
     DSLContext db;
+
+    private final TestData data = new TestData();
 
     public boolean batchExists(BatchName table) {
         return db.meta().getTables(table.asString()).size() > 0;
@@ -38,7 +41,33 @@ public class TestDbContext {
     }
 
     public void createBatch(BatchName batchName) {
-        throw new UnsupportedOperationException("TODO");
+        createBatch(batchName, List.of(data.ID_SPEC, data.EMAIL_SPEC));
+    }
+
+    public void createBatch(BatchName batchName, List<DataFieldSpec> fields) {
+        var createTable = db.createTable(batchName.asString());
+        for (var field: fields) {
+            createTable = createTable.column(
+                    field.fieldName().asString(),
+                    resolveDataType(field.fieldType(), field.fieldConstraints().nullable())
+            );
+            if (field.fieldConstraints().unique()) {
+                createTable = createTable.unique(field.fieldName().asString());
+            }
+        }
+        createTable.execute();
+    }
+
+    private DataType<?> resolveDataType(FieldType fieldType, boolean isNullable) {
+        switch (fieldType) {
+            case TEXT -> {
+                return SQLDataType.LONGNVARCHAR(50_000).nullable(isNullable);
+            }
+            case NUMBER -> {
+                return SQLDataType.NUMERIC(20).nullable(isNullable);
+            }
+            default -> throw new UnsupportedOperationException("Cannot produce SQLDataType for " + fieldType);
+        }
     }
 
     private List<DataFieldSpec> extractTableFieldSpecs(Table<?> dbTable) {

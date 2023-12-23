@@ -24,9 +24,13 @@ public class TestData {
     }
 
     public final BatchName TST_BATCH = BatchName.of("tst_batch");
+    public final FieldName ID = FieldName.of("id");
+    public final FieldName EMAIL = FieldName.of("email");
+    public final DataFieldSpec ID_SPEC = new DataFieldSpec(ID, FieldType.NUMBER, FieldConstraint.UNIQUE, FieldConstraint.NOT_NULL);
+    public final DataFieldSpec EMAIL_SPEC = new DataFieldSpec(EMAIL, FieldType.TEXT, FieldConstraint.UNIQUE);
 
     public DataFieldSpec fieldSpec(String name, FieldType type, FieldConstraint... constraints) {
-        return new DataFieldSpec(FieldName.of(name), type, Arrays.asList(constraints));
+        return new DataFieldSpec(FieldName.of(name), type, constraints);
     }
 
     public DataFieldSpec textFieldSpec(String name) {
