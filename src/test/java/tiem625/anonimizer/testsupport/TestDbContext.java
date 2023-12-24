@@ -41,7 +41,7 @@ public class TestDbContext {
     }
 
     public void createBatch(BatchName batchName) {
-        createBatch(batchName, List.of(data.ID_SPEC, data.EMAIL_SPEC));
+        createBatch(batchName, List.of(data.idFieldSpec(), data.emailFieldSpec()));
     }
 
     public void createBatch(BatchName batchName, List<DataFieldSpec> fields) {
