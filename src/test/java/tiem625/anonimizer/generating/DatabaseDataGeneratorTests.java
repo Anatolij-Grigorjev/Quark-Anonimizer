@@ -63,6 +63,30 @@ public class DatabaseDataGeneratorTests {
     }
 
     @Test
+    void spec_for_existing_batch_replaces_it() {
+        var batch = data.TST_BATCH;
+        Amount amount1 = Amount.of(5);
+        List<DataFieldSpec> fields1 = data.textFieldSpecsList("field1");
+        var spec1 = data.dataGenerationRules(batch, fields1, amount1);
+
+        dataGeneratorImpl.generate(spec1);
+
+        Assertions.assertEquals(amount1, db.getBatchRecordsCount(batch));
+        List<DataFieldSpec> batchFields = db.getBatchFieldSpecs(batch);
+        Assertions.assertEquals(fields1.size(), batchFields.size());
+
+        Amount amount2 = Amount.of(15);
+        List<DataFieldSpec> fields2 = data.textFieldSpecsList("field_a", "field_b");
+        var spec2 = data.dataGenerationRules(batch, fields2, amount2);
+
+        dataGeneratorImpl.generate(spec2);
+
+        Assertions.assertEquals(amount2, db.getBatchRecordsCount(batch));
+        List<DataFieldSpec> batch2Fields = db.getBatchFieldSpecs(batch);
+        Assertions.assertEquals(fields2.size(), batch2Fields.size());
+    }
+
+    @Test
     void spec_creates_table_with_correct_field_names_types_and_constraints() {
         var idFieldSpec = data.fieldSpec("id", FieldType.NUMBER, UNIQUE, NOT_NULL);
         var usernameFieldSpec = data.fieldSpec("username", FieldType.TEXT, UNIQUE);
