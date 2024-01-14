@@ -3,9 +3,8 @@ package tiem625.anonimizer.generating.db;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.jooq.CreateTableElementListStep;
-import org.jooq.DSLContext;
-import org.jooq.DataType;
+import org.jooq.Record;
+import org.jooq.*;
 import org.jooq.impl.SQLDataType;
 import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.commonterms.BatchName;
@@ -13,6 +12,7 @@ import tiem625.anonimizer.commonterms.FieldType;
 import tiem625.anonimizer.generating.DataGenerator;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static tiem625.anonimizer.streams.StreamOperators.pickFirst;
 
@@ -21,6 +21,7 @@ public class DatabaseDataGenerator implements DataGenerator {
 
     public static final int DEFAULT_VARCHAR_LENGTH = 50_000;
     public static final int DEFAULT_NUMERIC_PRECISION = 20;
+    public static final int INSERT_BATCH_STEP = 7500;
     private DSLContext dbContext;
 
     @Inject public DatabaseDataGenerator(DSLContext dbContext) {
@@ -37,6 +38,25 @@ public class DatabaseDataGenerator implements DataGenerator {
     }
 
     private void generateDataInBatch(BatchName batchName, List<DataFieldSpec> fieldSpecs, Amount amountToGenerate) {
+        var preparedRecords = IntStream.range(0, amountToGenerate.asNumber())
+                .mapToObj(idx -> generateRecordToSpecAtIndex(fieldSpecs, idx))
+                .toList();
+        var storeTable = dbContext.meta().getTables(batchName.asString()).get(0);
+        insertInBatches(storeTable, preparedRecords);
+    }
+
+    private void insertInBatches(Table<?> storeTable, List<Record> preparedRecords) {
+        List<TableRecord<?>> tableRecords = convertToTableRecords(storeTable, preparedRecords);
+        IntStream.iterate(0, idx -> idx < tableRecords.size(), idx -> idx + INSERT_BATCH_STEP)
+                .mapToObj(idx -> tableRecords.subList(idx, Math.min(idx + INSERT_BATCH_STEP, tableRecords.size())))
+                .forEachOrdered(recordsBatch -> dbContext.batchInsert(recordsBatch).executeAsync());
+    }
+
+    private List<TableRecord<?>> convertToTableRecords(Table<?> table, List<Record> unboundRecords) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    private Record generateRecordToSpecAtIndex(List<DataFieldSpec> fieldSpecs, int recordIdx) {
         throw new UnsupportedOperationException("TODO");
     }
 
