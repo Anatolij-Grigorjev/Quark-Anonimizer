@@ -1,4 +1,4 @@
-package tiem625.anonimizer.streams;
+package tiem625.anonimizer.tooling.streams;
 
 import java.util.function.BinaryOperator;
 
