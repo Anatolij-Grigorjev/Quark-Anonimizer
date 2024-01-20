@@ -83,4 +83,10 @@ public class TestData {
         return new DataGenerationRules(batchName, fieldSpecs, amount);
     }
 
+    public List<DataFieldSpec> idEmailFieldsSpecs() {
+        return List.of(
+            idFieldSpec(FieldConstraint.NOT_NULL, FieldConstraint.UNIQUE),
+            emailFieldSpec(FieldConstraint.UNIQUE)
+        );
+    }
 }

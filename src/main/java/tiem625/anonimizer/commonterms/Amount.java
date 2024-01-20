@@ -35,4 +35,9 @@ public class Amount {
     public int hashCode() {
         return Objects.hash(amount);
     }
+
+    @Override
+    public String toString() {
+        return String.valueOf(asNumber());
+    }
 }
