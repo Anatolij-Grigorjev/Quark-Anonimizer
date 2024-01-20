@@ -1,6 +1,5 @@
 package tiem625.anonimizer.testsupport;
 
-import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import tiem625.anonimizer.commonterms.Amount;
@@ -8,13 +7,14 @@ import tiem625.anonimizer.commonterms.BatchName;
 import tiem625.anonimizer.commonterms.DataObject;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 
+import javax.sql.DataSource;
 import java.util.List;
 
 @ApplicationScoped
 public class TestDbContext {
 
     @Inject
-    AgroalDataSource dataSource;
+    DataSource dataSource;
 
     private final TestData data = new TestData();
 
