@@ -5,6 +5,8 @@ import tiem625.anonimizer.commonterms.FieldType;
 import java.util.HashMap;
 import java.util.Map;
 
+import static tiem625.anonimizer.tooling.validation.Parameters.assertParamPresent;
+
 public class SQLStatementGeneratorConfig {
 
     private final Map<FieldType, String> fieldTypesToSQLMapping;
@@ -31,12 +33,8 @@ public class SQLStatementGeneratorConfig {
         }
 
         public Builder sqlTypeForFieldType(String sqlType, FieldType fieldType) {
-            if (sqlType == null) {
-                throw new IllegalArgumentException("Got null sqlType");
-            }
-            if (fieldType == null) {
-                throw new IllegalArgumentException("Got null fieldType");
-            }
+            assertParamPresent(sqlType, "Got null sqlType");
+            assertParamPresent(fieldType, "Got null fieldType");
             fieldToSQLMap.put(fieldType, sqlType);
             return this;
         }

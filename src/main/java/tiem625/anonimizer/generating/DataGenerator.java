@@ -39,7 +39,7 @@ public interface DataGenerator {
     }
 
     class FieldConstraints {
-        public static final FieldConstraints NONE = of();
+        public static final FieldConstraints NONE = new FieldConstraints(EnumSet.noneOf(FieldConstraint.class));
 
         public static FieldConstraints of(FieldConstraint... constraints) {
             if (constraints.length == 0) {

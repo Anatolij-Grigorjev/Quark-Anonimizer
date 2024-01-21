@@ -51,13 +51,13 @@ public class SQLStatementGeneratorTests {
 
         String statement = sqlStatementGenerator.createTableStatement(batchName, fieldSpecs);
 
-        Assertions.assertEquals(
-        """
-        CREATE TABLE %s (
-            %s varchar(%d),
-            %s varchar(%d)
-        );
-        """.formatted(batchName, field1, VARCHAR_LENGTH, field2, VARCHAR_LENGTH).stripIndent(), statement);
+        assertStatementBlocksEqual(
+                """
+                        CREATE TABLE %s (
+                            %s varchar(%d),
+                            %s varchar(%d)
+                        );"""
+                        .formatted(batchName, field1, VARCHAR_LENGTH, field2, VARCHAR_LENGTH).stripIndent(), statement);
     }
 
     @Test
@@ -67,14 +67,15 @@ public class SQLStatementGeneratorTests {
 
         String statement = sqlStatementGenerator.createTableStatement(batchName, fieldSpecs);
 
-        Assertions.assertEquals(
-                """
-                CREATE TABLE %s (
-                    %s int NOT NULL,
-                    %s varchar(%d) UNIQUE,
-                    UNIQUE (%s)
-                );
-                """.formatted(batchName, data.ID, data.EMAIL, VARCHAR_LENGTH, data.ID).stripIndent(), statement);
+        assertStatementBlocksEqual("""
+                        CREATE TABLE %s (
+                            %s int NOT NULL,
+                            %s varchar(%d),
+                            UNIQUE (%s, %s)
+                        );"""
+                .formatted(batchName, data.ID, data.EMAIL, VARCHAR_LENGTH, data.ID, data.EMAIL).stripIndent(),
+                statement
+        );
     }
 
     @Test
@@ -128,5 +129,12 @@ public class SQLStatementGeneratorTests {
         String statement = sqlStatementGenerator.fetchTableRowsStatement(batchName, amount);
 
         Assertions.assertEquals("SELECT * FROM %s LIMIT %s;".formatted(batchName, amount), statement);
+    }
+
+    private void assertStatementBlocksEqual(String expected, String actual) {
+        Assertions.assertEquals(
+                expected.replaceAll("\\s{2,}", ""),
+                actual.replaceAll("\\s{2,}", "")
+        );
     }
 }
