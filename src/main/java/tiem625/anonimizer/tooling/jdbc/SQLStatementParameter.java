@@ -1,5 +1,9 @@
 package tiem625.anonimizer.tooling.jdbc;
 
+import tiem625.anonimizer.commonterms.Amount;
+import tiem625.anonimizer.commonterms.BatchName;
+import tiem625.anonimizer.commonterms.FieldName;
+
 import java.util.Objects;
 
 import static tiem625.anonimizer.tooling.jdbc.SQLStatementParameterType.*;
@@ -15,11 +19,7 @@ public class SQLStatementParameter {
         if (value == null) {
             return NULL_PARAMETER;
         }
-        return switch (value) {
-            case String text -> new SQLStatementParameter(TEXT, text);
-            case Number num -> new SQLStatementParameter(NUMBER, num);
-            default -> throw new IllegalArgumentException("Cannot infer param of type " + value.getClass());
-        };
+        return pickInferenceRule(value);
     }
 
     private SQLStatementParameter(SQLStatementParameterType type, Object value) {
@@ -46,5 +46,16 @@ public class SQLStatementParameter {
     @Override
     public int hashCode() {
         return Objects.hash(type, value);
+    }
+
+    private static SQLStatementParameter pickInferenceRule(Object value) {
+        return switch (value) {
+            case String text -> new SQLStatementParameter(TEXT, text);
+            case Number num -> new SQLStatementParameter(NUMBER, num);
+            case Amount amount -> pickInferenceRule(amount.asNumber());
+            case BatchName batchName -> pickInferenceRule(batchName.asString());
+            case FieldName fieldName -> pickInferenceRule(fieldName.asString());
+            default -> throw new IllegalArgumentException("Cannot infer param of type " + value.getClass());
+        };
     }
 }
