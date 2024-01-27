@@ -12,7 +12,7 @@ public interface SQLStatementGenerator {
 
     SQLStatement checkTableExistsStatement(BatchName batchName);
 
-    SQLStatement tableSizeStatement(BatchName batchName);
+    SQLStatement getTableSizeStatement(BatchName batchName);
 
     SQLStatement fetchTableRowsStatement(BatchName batchName, Amount limit);
 }

@@ -44,7 +44,7 @@ public class InMemorySQLStatementGenerator implements SQLStatementGenerator {
     }
 
 
-    public SQLStatement tableSizeStatement(BatchName batchName) {
+    public SQLStatement getTableSizeStatement(BatchName batchName) {
         assertParamPresent(batchName, "got null batchName");
 
         "SELECT COUNT(*) FROM %s;".formatted(batchName);

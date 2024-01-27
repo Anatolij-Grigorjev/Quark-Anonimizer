@@ -14,7 +14,7 @@ import tiem625.anonimizer.tooling.jdbc.SQLStatementGenerator;
 import java.util.List;
 
 @PrettyTestNames
-public class SQLStatementGeneratorTests {
+public class InMemorySQLStatementGeneratorTests {
 
     private static final int VARCHAR_LENGTH = 250;
 
@@ -72,21 +72,29 @@ public class SQLStatementGeneratorTests {
     void check_table_exists_creates_select_1() {
         BatchName batchName = data.TST_BATCH;
 
-        throw new UnsupportedOperationException("TODO");
+        var statement = sqlStatementGenerator.checkTableExistsStatement(batchName);
+
+        Assertions.assertEquals("SELECT 1 FROM ?", statement.queryText());
+        Assertions.assertEquals(1, statement.queryParameters().size());
+        Assertions.assertEquals(data.TST_BATCH, statement.queryParameters().get(0).value());
     }
 
     @Test
     void table_size_fails_on_bar_args() {
         BatchName nullBatch = null;
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> sqlStatementGenerator.tableSizeStatement(nullBatch));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> sqlStatementGenerator.getTableSizeStatement(nullBatch));
     }
 
     @Test
     void table_size_makes_select_count_statement() {
         BatchName batchName = data.TST_BATCH;
 
-        throw new UnsupportedOperationException("TODO");
+        var statement = sqlStatementGenerator.getTableSizeStatement(batchName);
+
+        Assertions.assertEquals("SELECT COUNT(*) FROM ?", statement.queryText());
+        Assertions.assertEquals(1, statement.queryParameters().size());
+        Assertions.assertEquals(data.TST_BATCH, statement.queryParameters().get(0).value());
     }
 
     @Test
@@ -105,6 +113,11 @@ public class SQLStatementGeneratorTests {
         BatchName batchName = data.TST_BATCH;
         Amount amount = Amount.of(10);
 
-        throw new UnsupportedOperationException("TODO");
+        var statement = sqlStatementGenerator.fetchTableRowsStatement(batchName, amount);
+
+        Assertions.assertEquals("SELECT * FROM ? LIMIT ?", statement.queryText());
+        Assertions.assertEquals(2, statement.queryParameters().size());
+        Assertions.assertEquals(data.TST_BATCH, statement.queryParameters().get(0).value());
+        Assertions.assertEquals(amount, statement.queryParameters().get(1).value());
     }
 }
