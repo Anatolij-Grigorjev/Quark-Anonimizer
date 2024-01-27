@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.jdbc;
+package tiem625.anonimizer.tooling.jdbc.local;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +9,7 @@ import tiem625.anonimizer.commonterms.FieldType;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
 import tiem625.anonimizer.testsupport.TestData;
+import tiem625.anonimizer.tooling.jdbc.SQLStatementGenerator;
 
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class SQLStatementGeneratorTests {
                 .sqlTypeForFieldType("int", FieldType.NUMBER)
                 .sqlTypeForFieldType("varchar(%s)".formatted(VARCHAR_LENGTH), FieldType.TEXT)
                 .build();
-        sqlStatementGenerator = new SQLStatementGenerator(config);
+        sqlStatementGenerator = new InMemorySQLStatementGenerator(config);
     }
 
     @Test
@@ -49,15 +50,7 @@ public class SQLStatementGeneratorTests {
         String field2 = "field2";
         var fieldSpecs = data.textFieldSpecsList(field1, field2);
 
-        String statement = sqlStatementGenerator.createTableStatement(batchName, fieldSpecs);
-
-        assertStatementBlocksEqual(
-                """
-                        CREATE TABLE %s (
-                            %s varchar(%d),
-                            %s varchar(%d)
-                        );"""
-                        .formatted(batchName, field1, VARCHAR_LENGTH, field2, VARCHAR_LENGTH).stripIndent(), statement);
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Test
@@ -65,17 +58,7 @@ public class SQLStatementGeneratorTests {
         var batchName = data.TST_BATCH;
         var fieldSpecs = data.idEmailFieldsSpecs();
 
-        String statement = sqlStatementGenerator.createTableStatement(batchName, fieldSpecs);
-
-        assertStatementBlocksEqual("""
-                        CREATE TABLE %s (
-                            %s int NOT NULL,
-                            %s varchar(%d),
-                            UNIQUE (%s, %s)
-                        );"""
-                .formatted(batchName, data.ID, data.EMAIL, VARCHAR_LENGTH, data.ID, data.EMAIL).stripIndent(),
-                statement
-        );
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Test
@@ -89,9 +72,7 @@ public class SQLStatementGeneratorTests {
     void check_table_exists_creates_select_1() {
         BatchName batchName = data.TST_BATCH;
 
-        String statement = sqlStatementGenerator.checkTableExistsStatement(batchName);
-
-        Assertions.assertEquals("SELECT 1 FROM %s;".formatted(batchName).stripIndent(), statement);
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Test
@@ -105,9 +86,7 @@ public class SQLStatementGeneratorTests {
     void table_size_makes_select_count_statement() {
         BatchName batchName = data.TST_BATCH;
 
-        String statement = sqlStatementGenerator.tableSizeStatement(batchName);
-
-        Assertions.assertEquals("SELECT COUNT(*) FROM %s;".formatted(batchName), statement);
+        throw new UnsupportedOperationException("TODO");
     }
 
     @Test
@@ -126,15 +105,6 @@ public class SQLStatementGeneratorTests {
         BatchName batchName = data.TST_BATCH;
         Amount amount = Amount.of(10);
 
-        String statement = sqlStatementGenerator.fetchTableRowsStatement(batchName, amount);
-
-        Assertions.assertEquals("SELECT * FROM %s LIMIT %s;".formatted(batchName, amount), statement);
-    }
-
-    private void assertStatementBlocksEqual(String expected, String actual) {
-        Assertions.assertEquals(
-                expected.replaceAll("\\s{2,}", ""),
-                actual.replaceAll("\\s{2,}", "")
-        );
+        throw new UnsupportedOperationException("TODO");
     }
 }

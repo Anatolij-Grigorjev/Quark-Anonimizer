@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.jdbc;
+package tiem625.anonimizer.tooling.jdbc.local;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
