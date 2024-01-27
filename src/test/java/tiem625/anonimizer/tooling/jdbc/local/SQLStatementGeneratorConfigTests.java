@@ -5,17 +5,17 @@ import org.junit.jupiter.api.Test;
 import tiem625.anonimizer.commonterms.FieldType;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
 
+import static tiem625.anonimizer.tooling.jdbc.local.SQLStatementGeneratorConfig.DEFAULT_TEXT_LENGTH;
+
 @PrettyTestNames
 public class SQLStatementGeneratorConfigTests {
 
-    private SQLStatementGeneratorConfig config;
-
     @Test
-    void default_config_uses_int_varchar_250() {
+    void default_config_uses_int_default_varchar() {
         var config = SQLStatementGeneratorConfig.builder().build();
 
         Assertions.assertEquals("int", config.getSQLTypeFor(FieldType.NUMBER));
-        Assertions.assertEquals("varchar(250)", config.getSQLTypeFor(FieldType.TEXT));
+        Assertions.assertEquals("varchar(" + DEFAULT_TEXT_LENGTH + ")", config.getSQLTypeFor(FieldType.TEXT));
     }
 
     @Test

@@ -9,6 +9,7 @@ import static tiem625.anonimizer.tooling.validation.Parameters.assertParamPresen
 
 public class SQLStatementGeneratorConfig {
 
+    static final Integer DEFAULT_TEXT_LENGTH = 250;
     private final Map<FieldType, String> fieldTypesToSQLMapping;
 
     private SQLStatementGeneratorConfig(Map<FieldType, String> fieldTypesToSQLMapping) {
@@ -44,7 +45,7 @@ public class SQLStatementGeneratorConfig {
         }
 
         private void addDefaults() {
-            fieldToSQLMap.put(FieldType.TEXT, "varchar(250)");
+            fieldToSQLMap.put(FieldType.TEXT, "varchar(" + DEFAULT_TEXT_LENGTH + ")");
             fieldToSQLMap.put(FieldType.NUMBER, "int");
         }
     }
