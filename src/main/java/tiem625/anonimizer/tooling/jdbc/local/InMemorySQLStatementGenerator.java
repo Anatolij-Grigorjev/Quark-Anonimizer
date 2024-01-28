@@ -7,8 +7,10 @@ import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.tooling.jdbc.SQLStatement;
 import tiem625.anonimizer.tooling.jdbc.SQLStatementGenerator;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static tiem625.anonimizer.tooling.validation.Parameters.assertParamCondition;
 import static tiem625.anonimizer.tooling.validation.Parameters.assertParamPresent;
@@ -28,27 +30,32 @@ public class InMemorySQLStatementGenerator implements SQLStatementGenerator {
         assertParamPresent(fieldSpecs, "fieldSpecs was null");
         assertParamCondition(fieldSpecs, specsList -> !specsList.isEmpty(), "specs list was empty");
 
-        StringBuilder statementBuilder = new StringBuilder("CREATE TABLE %s (\n".formatted(batchName));
+        StringBuilder statementBuilder = new StringBuilder();
+        appendCreateTableHeader(statementBuilder);
         appendColumnDefinitionLines(statementBuilder, fieldSpecs);
-        statementBuilder.append("\n);");
-        statementBuilder.toString();
-        throw new UnsupportedOperationException("TODO");
+        List<DataFieldSpec> uniqueFields = filterUniqueFieldsSpecs(fieldSpecs);
+        if (!uniqueFields.isEmpty()) {
+            appendUniqueColumnsConstraint(statementBuilder, uniqueFields.size());
+        }
+        appendCreateTableFooter(statementBuilder);
+        String preparedStatementText = statementBuilder.toString();
+        Object[] statementParams = collectStatementParams(batchName, fieldSpecs, uniqueFields);
+
+        return SQLStatement.forSqlAndParams(preparedStatementText, statementParams);
     }
 
 
     public SQLStatement checkTableExistsStatement(BatchName batchName) {
         assertParamPresent(batchName, "got null batchName");
 
-        "SELECT 1 FROM %s;".formatted(batchName);
-        throw new UnsupportedOperationException("TODO");
+        return SQLStatement.forSqlAndParams("SELECT 1 FROM ?;", batchName);
     }
 
 
     public SQLStatement getTableSizeStatement(BatchName batchName) {
         assertParamPresent(batchName, "got null batchName");
 
-        "SELECT COUNT(*) FROM %s;".formatted(batchName);
-        throw new UnsupportedOperationException("TODO");
+        return SQLStatement.forSqlAndParams("SELECT COUNT(*) FROM ?;", batchName);
     }
 
 
@@ -57,8 +64,11 @@ public class InMemorySQLStatementGenerator implements SQLStatementGenerator {
         assertParamPresent(amount, "got null amount");
         assertParamCondition(amount, thisAmount -> thisAmount.asNumber() > 0, "passed amount is not positive");
 
-        "SELECT * FROM %s LIMIT %s;".formatted(batchName, amount);
-        throw new UnsupportedOperationException("TODO");
+        return SQLStatement.forSqlAndParams("SELECT * FROM ? LIMIT ?;", batchName, amount);
+    }
+
+    private void appendCreateTableHeader(StringBuilder appender) {
+        appender.append("CREATE TABLE ? (\n");
     }
 
     private void appendColumnDefinitionLines(StringBuilder appender, List<DataFieldSpec> fieldSpecs) {
@@ -66,23 +76,39 @@ public class InMemorySQLStatementGenerator implements SQLStatementGenerator {
                 .map(this::columnDefinitionLine)
                 .collect(Collectors.joining(",\n", "", ""));
         appender.append(columnDefinitions);
-
-        var uniqueFieldsNames = fieldSpecs.stream()
-                .filter(fieldSpec -> fieldSpec.fieldConstraints().unique())
-                .map(DataFieldSpec::fieldName)
-                .toList();
-        if (!uniqueFieldsNames.isEmpty()) {
-            var uniqueFieldNamesString = uniqueFieldsNames.stream().map(FieldName::asString).collect(Collectors.joining(", "));
-            appender.append(",\n");
-            appender.append("\tUNIQUE (%s)".formatted(uniqueFieldNamesString));
-        }
     }
 
     private String columnDefinitionLine(DataFieldSpec fieldSpec) {
-        return "\t%s %s%s".formatted(
-                fieldSpec.fieldName(),
+        return "\t? %s%s".formatted(
                 config.getSQLTypeFor(fieldSpec.fieldType()),
                 fieldSpec.fieldConstraints().nullable() ? "" : " NOT NULL"
         );
+    }
+
+    private List<DataFieldSpec> filterUniqueFieldsSpecs(List<DataFieldSpec> allFieldSpecs) {
+        return allFieldSpecs.stream().filter(spec -> spec.fieldConstraints().unique()).toList();
+    }
+
+    private void appendUniqueColumnsConstraint(StringBuilder appender, int numUniqueColumns) {
+        appender.append(", \n");
+        var placeholders = IntStream.range(0, numUniqueColumns).mapToObj(idx -> "?").collect(Collectors.joining(", "));
+        appender.append("\tUNIQUE(%s)".formatted(placeholders));
+    }
+
+    private void appendCreateTableFooter(StringBuilder appender) {
+        appender.append("\n);");
+    }
+
+    private Object[] collectStatementParams(BatchName batchName, List<DataFieldSpec> specs, List<DataFieldSpec> uniqueSpecs) {
+        List<Object> params = new ArrayList<>();
+        params.add(batchName);
+        params.addAll(specsNames(specs));
+        params.addAll(specsNames(uniqueSpecs));
+
+        return params.toArray();
+    }
+
+    private List<FieldName> specsNames(List<DataFieldSpec> specs) {
+        return specs.stream().map(DataFieldSpec::fieldName).toList();
     }
 }

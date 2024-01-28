@@ -1,5 +1,6 @@
 package tiem625.anonimizer.tooling.jdbc.local;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
 import tiem625.anonimizer.testsupport.TestData;
 import tiem625.anonimizer.tooling.jdbc.SQLStatementGenerator;
+import tiem625.anonimizer.tooling.jdbc.SQLStatementParameter;
 
 import java.util.List;
 
@@ -50,7 +52,21 @@ public class InMemorySQLStatementGeneratorTests {
         String field2 = "field2";
         var fieldSpecs = data.textFieldSpecsList(field1, field2);
 
-        throw new UnsupportedOperationException("TODO");
+        var statement = sqlStatementGenerator.createTableStatement(batchName, fieldSpecs);
+        var statementText = statement.queryText();
+
+        Assertions.assertFalse(statementText.contains("UNIQUE"));
+        Assertions.assertFalse(statementText.contains("NOT NULL"));
+        Assertions.assertTrue(statementText.contains("CREATE TABLE ? ("));
+        Assertions.assertEquals(2, StringUtils.countMatches(statementText, " varchar(250)"));
+
+        // batchname + field1 + field2 = 3
+        Assertions.assertEquals(3, StringUtils.countMatches(statementText, "?"));
+        Assertions.assertEquals(3, statement.queryParameters().size());
+        Assertions.assertEquals(
+                List.of(batchName.asString(), field1, field2),
+                statement.queryParameters().stream().map(SQLStatementParameter::value).toList()
+        );
     }
 
     @Test
@@ -58,7 +74,26 @@ public class InMemorySQLStatementGeneratorTests {
         var batchName = data.TST_BATCH;
         var fieldSpecs = data.idEmailFieldsSpecs();
 
-        throw new UnsupportedOperationException("TODO");
+        var statement = sqlStatementGenerator.createTableStatement(batchName, fieldSpecs);
+        var statementText = statement.queryText();
+
+        Assertions.assertTrue(statementText.contains("UNIQUE("));
+        Assertions.assertEquals(1, StringUtils.countMatches(statementText, " NOT NULL"));
+        Assertions.assertTrue(statementText.contains("CREATE TABLE ? ("));
+        Assertions.assertEquals(1, StringUtils.countMatches(statementText, " int"));
+        Assertions.assertEquals(1, StringUtils.countMatches(statementText, " varchar(250)"));
+
+        // batchname + field1 + field2 + unique field1 + unique field2 = 5
+        Assertions.assertEquals(5, StringUtils.countMatches(statementText, "?"));
+        Assertions.assertEquals(5, statement.queryParameters().size());
+        Assertions.assertEquals(
+                List.of(
+                        batchName.asString(),
+                        fieldSpecs.get(0).fieldName().asString(), fieldSpecs.get(1).fieldName().asString(),
+                        fieldSpecs.get(0).fieldName().asString(), fieldSpecs.get(1).fieldName().asString()
+                ),
+                statement.queryParameters().stream().map(SQLStatementParameter::value).toList()
+        );
     }
 
     @Test
@@ -74,9 +109,9 @@ public class InMemorySQLStatementGeneratorTests {
 
         var statement = sqlStatementGenerator.checkTableExistsStatement(batchName);
 
-        Assertions.assertEquals("SELECT 1 FROM ?", statement.queryText());
+        Assertions.assertEquals("SELECT 1 FROM ?;", statement.queryText());
         Assertions.assertEquals(1, statement.queryParameters().size());
-        Assertions.assertEquals(data.TST_BATCH, statement.queryParameters().get(0).value());
+        Assertions.assertEquals(data.TST_BATCH.asString(), statement.queryParameters().get(0).value());
     }
 
     @Test
@@ -92,9 +127,9 @@ public class InMemorySQLStatementGeneratorTests {
 
         var statement = sqlStatementGenerator.getTableSizeStatement(batchName);
 
-        Assertions.assertEquals("SELECT COUNT(*) FROM ?", statement.queryText());
+        Assertions.assertEquals("SELECT COUNT(*) FROM ?;", statement.queryText());
         Assertions.assertEquals(1, statement.queryParameters().size());
-        Assertions.assertEquals(data.TST_BATCH, statement.queryParameters().get(0).value());
+        Assertions.assertEquals(data.TST_BATCH.asString(), statement.queryParameters().get(0).value());
     }
 
     @Test
@@ -115,9 +150,9 @@ public class InMemorySQLStatementGeneratorTests {
 
         var statement = sqlStatementGenerator.fetchTableRowsStatement(batchName, amount);
 
-        Assertions.assertEquals("SELECT * FROM ? LIMIT ?", statement.queryText());
+        Assertions.assertEquals("SELECT * FROM ? LIMIT ?;", statement.queryText());
         Assertions.assertEquals(2, statement.queryParameters().size());
-        Assertions.assertEquals(data.TST_BATCH, statement.queryParameters().get(0).value());
-        Assertions.assertEquals(amount, statement.queryParameters().get(1).value());
+        Assertions.assertEquals(data.TST_BATCH.asString(), statement.queryParameters().get(0).value());
+        Assertions.assertEquals(amount.asNumber(), statement.queryParameters().get(1).value());
     }
 }
