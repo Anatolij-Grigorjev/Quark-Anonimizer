@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.jdbc;
+package tiem625.anonimizer.tooling.sql;
 
 import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.commonterms.BatchName;

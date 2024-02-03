@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.jdbc;
+package tiem625.anonimizer.tooling.sql;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -6,9 +6,9 @@ import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
 import tiem625.anonimizer.testsupport.TestData;
 
-import static tiem625.anonimizer.tooling.jdbc.SQLStatementParameter.NULL_PARAMETER;
-import static tiem625.anonimizer.tooling.jdbc.SQLStatementParameterType.NUMBER;
-import static tiem625.anonimizer.tooling.jdbc.SQLStatementParameterType.TEXT;
+import static tiem625.anonimizer.tooling.sql.SQLStatementParameter.NULL_PARAMETER;
+import static tiem625.anonimizer.tooling.sql.SQLStatementParameterType.NUMBER;
+import static tiem625.anonimizer.tooling.sql.SQLStatementParameterType.TEXT;
 
 @PrettyTestNames
 public class SQLStatementParameterTests {

@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.jdbc.local;
+package tiem625.anonimizer.tooling.sql.local;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
@@ -10,8 +10,8 @@ import tiem625.anonimizer.commonterms.FieldType;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
 import tiem625.anonimizer.testsupport.TestData;
-import tiem625.anonimizer.tooling.jdbc.SQLStatementGenerator;
-import tiem625.anonimizer.tooling.jdbc.SQLStatementParameter;
+import tiem625.anonimizer.tooling.sql.SQLStatementGenerator;
+import tiem625.anonimizer.tooling.sql.SQLStatementParameter;
 
 import java.util.List;
 

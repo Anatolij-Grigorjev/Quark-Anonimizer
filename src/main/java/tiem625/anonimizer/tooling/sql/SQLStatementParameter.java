@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.jdbc;
+package tiem625.anonimizer.tooling.sql;
 
 import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.commonterms.BatchName;
@@ -6,7 +6,7 @@ import tiem625.anonimizer.commonterms.FieldName;
 
 import java.util.Objects;
 
-import static tiem625.anonimizer.tooling.jdbc.SQLStatementParameterType.*;
+import static tiem625.anonimizer.tooling.sql.SQLStatementParameterType.*;
 
 public class SQLStatementParameter {
 

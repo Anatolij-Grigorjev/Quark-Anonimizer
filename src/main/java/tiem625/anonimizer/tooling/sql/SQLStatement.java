@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.jdbc;
+package tiem625.anonimizer.tooling.sql;
 
 import java.util.Arrays;
 import java.util.List;
