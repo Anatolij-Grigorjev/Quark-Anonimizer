@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.sql.local;
+package tiem625.anonimizer.tooling.sql;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
@@ -10,13 +10,11 @@ import tiem625.anonimizer.commonterms.FieldType;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
 import tiem625.anonimizer.testsupport.TestData;
-import tiem625.anonimizer.tooling.sql.SQLStatementGenerator;
-import tiem625.anonimizer.tooling.sql.SQLStatementParameter;
 
 import java.util.List;
 
 @PrettyTestNames
-public class InMemorySQLStatementGeneratorTests {
+public class SQLStatementGeneratorTests {
 
     private static final int VARCHAR_LENGTH = 250;
 
@@ -31,7 +29,7 @@ public class InMemorySQLStatementGeneratorTests {
                 .sqlTypeForFieldType("int", FieldType.NUMBER)
                 .sqlTypeForFieldType("varchar(%s)".formatted(VARCHAR_LENGTH), FieldType.TEXT)
                 .build();
-        sqlStatementGenerator = new InMemorySQLStatementGenerator(config);
+        sqlStatementGenerator = new SQLStatementGenerator(config);
     }
 
     @Test

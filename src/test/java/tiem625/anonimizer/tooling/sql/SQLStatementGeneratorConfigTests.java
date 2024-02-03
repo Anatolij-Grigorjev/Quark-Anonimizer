@@ -1,11 +1,11 @@
-package tiem625.anonimizer.tooling.sql.local;
+package tiem625.anonimizer.tooling.sql;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tiem625.anonimizer.commonterms.FieldType;
 import tiem625.anonimizer.testsupport.PrettyTestNames;
 
-import static tiem625.anonimizer.tooling.sql.local.SQLStatementGeneratorConfig.DEFAULT_TEXT_LENGTH;
+import static tiem625.anonimizer.tooling.sql.SQLStatementGeneratorConfig.DEFAULT_TEXT_LENGTH;
 
 @PrettyTestNames
 public class SQLStatementGeneratorConfigTests {

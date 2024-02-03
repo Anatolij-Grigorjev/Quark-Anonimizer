@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.sql.local;
+package tiem625.anonimizer.tooling.sql;
 
 import tiem625.anonimizer.commonterms.FieldType;
 
@@ -7,7 +7,7 @@ import java.util.Map;
 
 import static tiem625.anonimizer.tooling.validation.Parameters.assertParamPresent;
 
-public class SQLStatementGeneratorConfig {
+class SQLStatementGeneratorConfig {
 
     static final Integer DEFAULT_TEXT_LENGTH = 250;
     private final Map<FieldType, String> fieldTypesToSQLMapping;
