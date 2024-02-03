@@ -1,4 +1,4 @@
-package tiem625.anonimizer.tooling.sql;
+package tiem625.anonimizer.tooling.sql.jdbc;
 
 import tiem625.anonimizer.commonterms.FieldType;
 

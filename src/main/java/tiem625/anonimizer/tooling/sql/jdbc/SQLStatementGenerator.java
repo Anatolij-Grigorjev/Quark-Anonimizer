@@ -1,9 +1,10 @@
-package tiem625.anonimizer.tooling.sql;
+package tiem625.anonimizer.tooling.sql.jdbc;
 
 import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.commonterms.BatchName;
 import tiem625.anonimizer.commonterms.FieldName;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
+import tiem625.anonimizer.tooling.sql.SQLStatement;
 
 import java.util.ArrayList;
 import java.util.List;
