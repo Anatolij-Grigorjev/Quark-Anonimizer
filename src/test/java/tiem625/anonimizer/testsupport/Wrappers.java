@@ -1,5 +1,8 @@
 package tiem625.anonimizer.testsupport;
 
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 public class Wrappers {
 
     private Wrappers() {
@@ -7,26 +10,38 @@ public class Wrappers {
     }
 
     public static <T> T unchecked(ThrowsCheckedSupplier<T> func) {
-        try {
-            return func.value();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return func.get();
     }
 
     public static <I, O> O unchecked(ThrowsCheckedFunc<I, O> func, I input) {
-        try {
-            return func.value(input);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return func.apply(input);
     }
 
-    public interface ThrowsCheckedSupplier<T> {
+    public interface ThrowsCheckedSupplier<T> extends Supplier<T> {
+
+        @Override
+        default T get() {
+            try {
+                return value();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         T value() throws Exception;
     }
 
-    public interface ThrowsCheckedFunc<I, O> {
+    public interface ThrowsCheckedFunc<I, O> extends Function<I, O> {
+
+        @Override
+        default O apply(I input) {
+            try {
+                return value(input);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         O value(I input) throws Exception;
     }
 }
