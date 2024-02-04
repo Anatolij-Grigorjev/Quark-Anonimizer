@@ -1,9 +1,6 @@
 package tiem625.anonimizer.commonterms;
 
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public class DataObject {
 
@@ -22,9 +19,14 @@ public class DataObject {
     }
 
     public FieldValue getValue(FieldName atName) {
-        return Optional.ofNullable(atName)
-                .map(fields::get)
+        var presentFieldName = Optional.ofNullable(atName)
+                .filter(fields::containsKey)
                 .orElseThrow(() -> new NoSuchElementException("No field in object with name " + atName));
+        return fields.get(presentFieldName);
+    }
+
+    public Set<FieldName> fieldNames() {
+        return Collections.unmodifiableSet(fields.keySet());
     }
 
     @Override

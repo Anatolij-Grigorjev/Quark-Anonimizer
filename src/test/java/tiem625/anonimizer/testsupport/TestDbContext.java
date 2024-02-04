@@ -35,10 +35,14 @@ public class TestDbContext {
     }
 
     public void createBatch(BatchName batchName) {
-        createBatch(batchName, List.of(data.idFieldSpec(), data.emailFieldSpec()));
+        createBatch(batchName, data.idEmailFieldsSpecs());
     }
 
     public void createBatch(BatchName batchName, List<DataFieldSpec> fields) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    public void insertRows(BatchName batchName, List<DataObject> rows) {
         throw new UnsupportedOperationException("TODO");
     }
 }

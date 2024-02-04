@@ -1,9 +1,6 @@
 package tiem625.anonimizer.testsupport;
 
-import tiem625.anonimizer.commonterms.Amount;
-import tiem625.anonimizer.commonterms.BatchName;
-import tiem625.anonimizer.commonterms.FieldName;
-import tiem625.anonimizer.commonterms.FieldType;
+import tiem625.anonimizer.commonterms.*;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.generating.DataGenerator.DataGenerationRules;
 import tiem625.anonimizer.generating.FieldConstraint;
@@ -12,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -88,5 +86,15 @@ public class TestData {
             idFieldSpec(FieldConstraint.NOT_NULL, FieldConstraint.UNIQUE),
             emailFieldSpec(FieldConstraint.UNIQUE)
         );
+    }
+
+    public DataObject dataObjectForFieldSpecs(List<DataFieldSpec> specs) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    public List<DataObject> dataObjectsForFieldSpecs(Amount numObjects, List<DataFieldSpec> specs) {
+        return IntStream.range(0, numObjects.asNumber())
+                .mapToObj(idx -> dataObjectForFieldSpecs(specs))
+                .toList();
     }
 }
