@@ -3,21 +3,19 @@ package tiem625.anonimizer.testsupport;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import tiem625.anonimizer.commonterms.Amount;
-import tiem625.anonimizer.commonterms.BatchName;
-import tiem625.anonimizer.commonterms.DataObject;
+import tiem625.anonimizer.commonterms.*;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
+import tiem625.anonimizer.generating.FieldConstraint;
 
 import javax.sql.DataSource;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
 
 @ApplicationScoped
 public class TestDbContext {
 
+    public static final Set<Integer> NUMERIC_SQL_TYPES = Set.of(Types.NUMERIC, Types.INTEGER, Types.BIGINT, Types.TINYINT, Types.SMALLINT);
+    public static final Set<Integer> TEXT_SQL_TYPES = Set.of(Types.CHAR, Types.VARCHAR, Types.NCHAR, Types.NVARCHAR, Types.LONGVARCHAR, Types.LONGNVARCHAR);
     @Inject
     DataSource dataSource;
 
@@ -48,8 +46,8 @@ public class TestDbContext {
     public List<DataFieldSpec> getBatchFieldSpecs(BatchName batchName) {
         try (var connection = dataSource.getConnection()) {
             var metaData = connection.getMetaData();
-            assertUniqueTable(metaData, batchName);
-            throw new UnsupportedOperationException("TODO");
+            var dbTableName = getUniqueTableName(metaData, batchName);
+            return extractFieldSpecsFromColumns(metaData, dbTableName);
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
         }
@@ -90,11 +88,56 @@ public class TestDbContext {
         }
     }
 
-    private void assertUniqueTable(DatabaseMetaData metaData, BatchName batchName) throws SQLException {
+    private String getUniqueTableName(DatabaseMetaData metaData, BatchName batchName) throws SQLException {
         var matchingTables = metaData.getTables(null, testDbSchema, batchName.asString(), null);
         int numTables = getNumFetchedRows(matchingTables);
         if (numTables > 1) {
             throw new RuntimeException("schema " + testDbSchema + " has more than 1 table with pattern " + batchName);
         }
+        return matchingTables.getString("TABLE_NAME");
+    }
+
+    private List<DataFieldSpec> extractFieldSpecsFromColumns(DatabaseMetaData metaData, String dbTableName) throws SQLException {
+        Set<String> uniqueColumnsNames = collectUniqueColumnsNames(metaData, dbTableName);
+        var tableDbColumns = metaData.getColumns(null, testDbSchema, dbTableName, null);
+        var fieldSpecs = new ArrayList<DataFieldSpec>();
+        while (tableDbColumns.next()) {
+            var columnName = tableDbColumns.getString("COLUMN_NAME");
+            var columnType = tableDbColumns.getInt("DATA_TYPE");
+            boolean columnNullable = Objects.equals(tableDbColumns.getString("NULLABLE"), "YES");
+            boolean columnUnique = uniqueColumnsNames.contains(columnName);
+            fieldSpecs.add(buildFieldSpec(columnName, columnType, columnNullable, columnUnique));
+        }
+        return fieldSpecs;
+    }
+
+    private DataFieldSpec buildFieldSpec(String columnName, int columnType, boolean columnNullable, boolean columnUnique) {
+        List<FieldConstraint> fieldConstraints = new ArrayList<>();
+        if (!columnNullable) {
+            fieldConstraints.add(FieldConstraint.NOT_NULL);
+        }
+        if (columnUnique) {
+            fieldConstraints.add(FieldConstraint.UNIQUE);
+        }
+        return new DataFieldSpec(FieldName.of(columnName), resolveFieldType(columnType), fieldConstraints);
+    }
+
+    private FieldType resolveFieldType(int columnSQLType) {
+        if (NUMERIC_SQL_TYPES.contains(columnSQLType)) {
+            return FieldType.NUMBER;
+        }
+        if (TEXT_SQL_TYPES.contains(columnSQLType)) {
+            return FieldType.TEXT;
+        }
+        throw new IllegalStateException("Cannot resolve FieldType for SQL type " + columnSQLType);
+    }
+
+    private Set<String> collectUniqueColumnsNames(DatabaseMetaData metaData, String dbTableName) throws SQLException {
+        var tableDbIndexes = metaData.getIndexInfo(null, testDbSchema, dbTableName, true, true);
+        Set<String> uniqueColumnsNames = new HashSet<>();
+        while(tableDbIndexes.next()) {
+            uniqueColumnsNames.add(tableDbIndexes.getString("COLUMN_NAME"));
+        }
+        return uniqueColumnsNames;
     }
 }
