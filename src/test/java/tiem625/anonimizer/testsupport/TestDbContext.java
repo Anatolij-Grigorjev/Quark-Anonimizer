@@ -27,7 +27,7 @@ public class TestDbContext {
     private final TestData data = new TestData();
 
     public boolean batchExists(BatchName batchName) {
-        try (var statement = prepareStatement("SELECT 1 FROM " + batchName.asString())) {
+        try (var statement = prepareStatement("SELECT 1 FROM " + batchName)) {
             statement.execute();
             return true;
         } catch (SQLException missingTableEx) {
@@ -36,7 +36,7 @@ public class TestDbContext {
     }
 
     public Amount getBatchRecordsCount(BatchName batchName) {
-        try (var statement = prepareStatement("SELECT COUNT(*) FROM " + batchName.asString())) {
+        try (var statement = prepareStatement("SELECT COUNT(*) FROM " + batchName)) {
             ResultSet rowsCount = statement.executeQuery();
             int numericCount = rowsCount.getInt(1);
             return Amount.of(numericCount);
@@ -57,7 +57,7 @@ public class TestDbContext {
 
     public List<DataObject> getAllBatchValues(BatchName batchName) {
         var batchFieldSpecs = getBatchFieldSpecs(batchName);
-        try (var fetchValues = prepareStatement("SELECT * FROM " + batchName.asString())) {
+        try (var fetchValues = prepareStatement("SELECT * FROM " + batchName)) {
             var valuesCursor = fetchValues.executeQuery();
             var tableData = new ArrayList<DataObject>();
             while(valuesCursor.next()) {
@@ -78,6 +78,9 @@ public class TestDbContext {
     }
 
     public void insertRows(BatchName batchName, List<DataObject> rows) {
+        if (!batchExists(batchName)) {
+            throw new RuntimeException("batch " + batchName + " is missing");
+        }
         throw new UnsupportedOperationException("TODO");
     }
 
@@ -103,8 +106,8 @@ public class TestDbContext {
     private String getUniqueTableName(DatabaseMetaData metaData, BatchName batchName) throws SQLException {
         var matchingTables = metaData.getTables(null, testDbSchema, batchName.asString(), null);
         int numTables = getNumFetchedRows(matchingTables);
-        if (numTables > 1) {
-            throw new RuntimeException("schema " + testDbSchema + " has more than 1 table with pattern " + batchName);
+        if (numTables != 1) {
+            throw new RuntimeException("schema " + testDbSchema + " does not have exactly 1 table with pattern " + batchName);
         }
         return matchingTables.getString("TABLE_NAME");
     }
