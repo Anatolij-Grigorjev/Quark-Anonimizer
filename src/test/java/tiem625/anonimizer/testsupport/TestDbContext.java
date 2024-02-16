@@ -6,10 +6,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import tiem625.anonimizer.commonterms.*;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.generating.FieldConstraint;
+import tiem625.anonimizer.testsupport.Wrappers.ThrowsCheckedFunc;
 
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class TestDbContext {
@@ -54,7 +56,17 @@ public class TestDbContext {
     }
 
     public List<DataObject> getAllBatchValues(BatchName batchName) {
-        throw new UnsupportedOperationException("TODO");
+        var batchFieldSpecs = getBatchFieldSpecs(batchName);
+        try (var fetchValues = prepareStatement("SELECT * FROM " + batchName.asString())) {
+            var valuesCursor = fetchValues.executeQuery();
+            var tableData = new ArrayList<DataObject>();
+            while(valuesCursor.next()) {
+                tableData.add(collectRowDataObject(valuesCursor, batchFieldSpecs));
+            }
+            return tableData;
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public void createBatch(BatchName batchName) {
@@ -139,5 +151,28 @@ public class TestDbContext {
             uniqueColumnsNames.add(tableDbIndexes.getString("COLUMN_NAME"));
         }
         return uniqueColumnsNames;
+    }
+
+    private DataObject collectRowDataObject(ResultSet tableData, List<DataFieldSpec> fieldSpecs) throws SQLException {
+        var fieldValues = fieldSpecs.stream().map(fieldSpec -> {
+            var valueExtractor = pickValueExtractor(fieldSpec.fieldType(), tableData);
+            var fieldName = fieldSpec.fieldName();
+            var fieldValue = FieldValue.of(fieldSpec.fieldType(), valueExtractor.apply(fieldName.asString()));
+            return Map.entry(fieldName, fieldValue);
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        return DataObject.withFields(fieldValues);
+    }
+
+    private ThrowsCheckedFunc<String, ?> pickValueExtractor(FieldType fieldType, ResultSet valuesStore) {
+        switch (fieldType) {
+            case TEXT -> {
+                return valuesStore::getString;
+            }
+            case NUMBER -> {
+                return valuesStore::getBigDecimal;
+            }
+            default -> throw new IllegalStateException("Unexpected field type: " + fieldType);
+        }
     }
 }
