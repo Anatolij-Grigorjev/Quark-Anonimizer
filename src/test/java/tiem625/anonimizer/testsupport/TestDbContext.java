@@ -9,9 +9,12 @@ import tiem625.anonimizer.generating.FieldConstraint;
 import tiem625.anonimizer.testsupport.Wrappers.ThrowsCheckedFunc;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @ApplicationScoped
 public class TestDbContext {
@@ -81,7 +84,66 @@ public class TestDbContext {
         if (!batchExists(batchName)) {
             throw new RuntimeException("batch " + batchName + " is missing");
         }
-        throw new UnsupportedOperationException("TODO");
+        if (rows.isEmpty()) {
+            return;
+        }
+        var orderedFieldsNames = new ArrayList<>(rows.getFirst().fieldNames());
+        String insertStatementTemplate = buildInsertStatement(batchName, orderedFieldsNames);
+        for(var row: rows) {
+            try(var statement = prepareStatement(insertStatementTemplate)) {
+                setStatementVars(statement, orderedFieldsNames, row);
+                statement.executeUpdate();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+    }
+
+    private String buildInsertStatement(BatchName batchName, ArrayList<FieldName> fieldsNames) {
+        Collector<CharSequence, ?, String> joinParamsList = Collectors.joining(", ", "(", ")");
+        return "INSERT INTO " + batchName +
+                " " +
+                fieldsNames.stream().map(FieldName::asString).collect(joinParamsList) +
+                " VALUES " +
+                IntStream.range(0, fieldsNames.size()).mapToObj(idx -> "?").collect(joinParamsList) +
+                ";";
+    }
+
+    private void setStatementVars(PreparedStatement statement, List<FieldName> varsSequence, DataObject vars) {
+        IntStream.range(0, varsSequence.size()).forEachOrdered(idx -> {
+            var varName = varsSequence.get(idx);
+            var varValue = vars.getValue(varName);
+            try {
+                setStatementVarValue(statement, idx, varValue);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private void setStatementVarValue(PreparedStatement statement, int idx, FieldValue varValue) throws SQLException {
+        switch (varValue.type()) {
+            case TEXT -> {
+                statement.setString(idx, (String) varValue.content());
+            }
+            case NUMBER -> {
+                statement.setBigDecimal(idx, contentAsBigDecimal(varValue.content()));
+            }
+            default -> throw new IllegalStateException("Unexpected value type: " + varValue.type());
+        }
+    }
+
+    private BigDecimal contentAsBigDecimal(Object content) {
+        if (content == null) {
+            return null;
+        }
+        if (content instanceof BigDecimal) {
+            return (BigDecimal) content;
+        }
+        if (content instanceof Integer) {
+            return BigDecimal.valueOf((int) content);
+        }
+        throw new IllegalStateException("Cannot BigDecimal content of type " + content.getClass());
     }
 
     private PreparedStatement prepareStatement(String sql) {
