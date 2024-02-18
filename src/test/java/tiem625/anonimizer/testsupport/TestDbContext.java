@@ -123,13 +123,8 @@ public class TestDbContext {
 
     private void setStatementVarValue(PreparedStatement statement, int idx, FieldValue varValue) throws SQLException {
         switch (varValue.type()) {
-            case TEXT -> {
-                statement.setString(idx, (String) varValue.content());
-            }
-            case NUMBER -> {
-                statement.setBigDecimal(idx, contentAsBigDecimal(varValue.content()));
-            }
-            default -> throw new IllegalStateException("Unexpected value type: " + varValue.type());
+            case TEXT -> statement.setString(idx, (String) varValue.content());
+            case NUMBER -> statement.setBigDecimal(idx, contentAsBigDecimal(varValue.content()));
         }
     }
 
@@ -230,14 +225,9 @@ public class TestDbContext {
     }
 
     private ThrowsCheckedFunc<String, ?> pickValueExtractor(FieldType fieldType, ResultSet valuesStore) {
-        switch (fieldType) {
-            case TEXT -> {
-                return valuesStore::getString;
-            }
-            case NUMBER -> {
-                return valuesStore::getBigDecimal;
-            }
-            default -> throw new IllegalStateException("Unexpected field type: " + fieldType);
-        }
+        return switch (fieldType) {
+            case TEXT -> valuesStore::getString;
+            case NUMBER -> valuesStore::getBigDecimal;
+        };
     }
 }
