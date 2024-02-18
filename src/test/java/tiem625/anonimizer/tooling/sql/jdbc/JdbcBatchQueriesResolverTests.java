@@ -2,6 +2,7 @@ package tiem625.anonimizer.tooling.sql.jdbc;
 
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,13 @@ public class JdbcBatchQueriesResolverTests {
 
     @BeforeEach
     void setup() {
+        db.dropSchemaTables();
         batchQueriesResolver = new JdbcBatchQueriesResolver(dataSource);
+    }
+
+    @AfterEach
+    void cleanDb() {
+        db.dropSchemaTables();
     }
 
     @Test

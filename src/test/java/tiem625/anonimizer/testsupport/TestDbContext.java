@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import tiem625.anonimizer.commonterms.*;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
+import tiem625.anonimizer.generating.DataGenerator.FieldConstraints;
 import tiem625.anonimizer.generating.FieldConstraint;
 import tiem625.anonimizer.testsupport.Wrappers.ThrowsCheckedFunc;
 
@@ -24,10 +25,14 @@ public class TestDbContext {
     @Inject
     DataSource dataSource;
 
-    @ConfigProperty(name = "test.anonimizer.data.schema")
+    @ConfigProperty(name = "anonimizer.data.schema")
     String testDbSchema;
 
     private final TestData data = new TestData();
+
+    public void dropSchemaTables() {
+        throw new UnsupportedOperationException("TODO");
+    }
 
     public boolean batchExists(BatchName batchName) {
         try (var statement = prepareStatement("SELECT 1 FROM " + batchName)) {
@@ -77,7 +82,14 @@ public class TestDbContext {
     }
 
     public void createBatch(BatchName batchName, List<DataFieldSpec> fields) {
-        throw new UnsupportedOperationException("TODO");
+        var createQuery = "CREATE TABLE " + batchName + "("
+                + columnDefinitionsLines(fields)
+                + ");";
+        try (var statement = prepareStatement(createQuery)) {
+            statement.execute();
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public void insertRows(BatchName batchName, List<DataObject> rows) {
@@ -98,6 +110,11 @@ public class TestDbContext {
             }
         }
     }
+
+
+
+    /////////////IMPL HELPERS//////////
+
 
     private String buildInsertStatement(BatchName batchName, ArrayList<FieldName> fieldsNames) {
         Collector<CharSequence, ?, String> joinParamsList = Collectors.joining(", ", "(", ")");
@@ -141,12 +158,8 @@ public class TestDbContext {
         throw new IllegalStateException("Cannot BigDecimal content of type " + content.getClass());
     }
 
-    private PreparedStatement prepareStatement(String sql) {
-        try (var connection = dataSource.getConnection()) {
-            return connection.prepareStatement(sql);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private PreparedStatement prepareStatement(String sql) throws SQLException {
+        return dataSource.getConnection().prepareStatement(sql);
     }
 
     private static int getNumFetchedRows(ResultSet rows) {
@@ -229,5 +242,24 @@ public class TestDbContext {
             case TEXT -> valuesStore::getString;
             case NUMBER -> valuesStore::getBigDecimal;
         };
+    }
+
+    private String columnDefinitionsLines(List<DataFieldSpec> fields) {
+        return fields.stream().map(field ->
+                field.fieldName() + " " + fieldSQLType(field.fieldType()) + " " + constraintWords(field.fieldConstraints())
+        ).collect(Collectors.joining(",\n"));
+    }
+
+    private String fieldSQLType(FieldType fieldType) {
+        return switch (fieldType) {
+            case TEXT -> "varchar(250)";
+            case NUMBER -> "int";
+        };
+    }
+
+    private String constraintWords(FieldConstraints fieldConstraints) {
+        return (fieldConstraints.nullable() ? "NULL" : "NOT NULL")
+                + " "
+                + (fieldConstraints.unique() ? "UNIQUE" : "");
     }
 }
