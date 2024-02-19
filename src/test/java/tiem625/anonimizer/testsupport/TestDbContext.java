@@ -13,6 +13,7 @@ import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -28,10 +29,20 @@ public class TestDbContext {
     @ConfigProperty(name = "anonimizer.data.schema")
     String testDbSchema;
 
+    private static final Logger LOG = Logger.getLogger(TestDbContext.class.getName());
+
     private final TestData data = new TestData();
 
     public void dropSchemaTables() {
-        throw new UnsupportedOperationException("TODO");
+        try(var connection = dataSource.getConnection()) {
+            var tableNames = getTablesNames(connection.getMetaData());
+            for (String tableName : tableNames) {
+                var dropTableStatement = connection.prepareStatement("DROP TABLE IF EXISTS " + tableName);
+                dropTableStatement.execute();
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public boolean batchExists(BatchName batchName) {
@@ -173,8 +184,18 @@ public class TestDbContext {
         }
     }
 
+    private Set<String> getTablesNames(DatabaseMetaData metaData) throws SQLException {
+        var tablesRows = metaData.getTables(testDbSchema, null, null, new String[]{"TABLE", "VIEW"});
+        Set<String> tableNames = new HashSet<>();
+        while (tablesRows.next()) {
+            var nameString = tablesRows.getString("TABLE_NAME");
+            tableNames.add(nameString);
+        }
+        return tableNames;
+    }
+
     private String getUniqueTableName(DatabaseMetaData metaData, BatchName batchName) throws SQLException {
-        var matchingTables = metaData.getTables(null, testDbSchema, batchName.asString(), null);
+        var matchingTables = metaData.getTables(testDbSchema, null, batchName.asString(), null);
         int numTables = getNumFetchedRows(matchingTables);
         if (numTables != 1) {
             throw new RuntimeException("schema " + testDbSchema + " does not have exactly 1 table with pattern " + batchName);
@@ -184,7 +205,7 @@ public class TestDbContext {
 
     private List<DataFieldSpec> extractFieldSpecsFromColumns(DatabaseMetaData metaData, String dbTableName) throws SQLException {
         Set<String> uniqueColumnsNames = collectUniqueColumnsNames(metaData, dbTableName);
-        var tableDbColumns = metaData.getColumns(null, testDbSchema, dbTableName, null);
+        var tableDbColumns = metaData.getColumns(testDbSchema, null, dbTableName, null);
         var fieldSpecs = new ArrayList<DataFieldSpec>();
         while (tableDbColumns.next()) {
             var columnName = tableDbColumns.getString("COLUMN_NAME");
@@ -218,7 +239,7 @@ public class TestDbContext {
     }
 
     private Set<String> collectUniqueColumnsNames(DatabaseMetaData metaData, String dbTableName) throws SQLException {
-        var tableDbIndexes = metaData.getIndexInfo(null, testDbSchema, dbTableName, true, true);
+        var tableDbIndexes = metaData.getIndexInfo(testDbSchema, null, dbTableName, true, true);
         Set<String> uniqueColumnsNames = new HashSet<>();
         while(tableDbIndexes.next()) {
             uniqueColumnsNames.add(tableDbIndexes.getString("COLUMN_NAME"));
