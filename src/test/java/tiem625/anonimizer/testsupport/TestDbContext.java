@@ -6,13 +6,17 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import tiem625.anonimizer.commonterms.*;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.generating.DataGenerator.FieldConstraints;
-import tiem625.anonimizer.generating.FieldConstraint;
-import tiem625.anonimizer.testsupport.Wrappers.ThrowsCheckedFunc;
+import tiem625.anonimizer.tooling.sql.jdbc.DBMetadataReader;
+import tiem625.anonimizer.tooling.streams.Wrappers.ThrowsCheckedFunc;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
-import java.sql.*;
-import java.util.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -20,22 +24,25 @@ import java.util.stream.IntStream;
 
 @ApplicationScoped
 public class TestDbContext {
-
-    public static final Set<Integer> NUMERIC_SQL_TYPES = Set.of(Types.NUMERIC, Types.INTEGER, Types.BIGINT, Types.TINYINT, Types.SMALLINT);
-    public static final Set<Integer> TEXT_SQL_TYPES = Set.of(Types.CHAR, Types.VARCHAR, Types.NCHAR, Types.NVARCHAR, Types.LONGVARCHAR, Types.LONGNVARCHAR);
-    @Inject
-    DataSource dataSource;
-
-    @ConfigProperty(name = "anonimizer.data.schema")
-    String testDbSchema;
-
     private static final Logger LOG = Logger.getLogger(TestDbContext.class.getName());
 
+    private final DataSource dataSource;
+    private final String testDbSchema;
     private final TestData data = new TestData();
+    private final DBMetadataReader dbMetaReader;
+
+    @Inject TestDbContext(
+            DataSource dataSource,
+            @ConfigProperty(name = "anonimizer.data.schema") String testDbSchema
+    ) {
+        this.dataSource = dataSource;
+        this.testDbSchema = testDbSchema;
+        this.dbMetaReader = new DBMetadataReader(dataSource, testDbSchema);
+    }
 
     public void dropSchemaTables() {
         try(var connection = dataSource.getConnection()) {
-            var tableNames = getTablesNames(connection.getMetaData());
+            var tableNames = dbMetaReader.getTablesNamesInSchema();
             for (String tableName : tableNames) {
                 var dropTableStatement = connection.prepareStatement("DROP TABLE IF EXISTS " + tableName);
                 dropTableStatement.execute();
@@ -65,10 +72,9 @@ public class TestDbContext {
     }
 
     public List<DataFieldSpec> getBatchFieldSpecs(BatchName batchName) {
-        try (var connection = dataSource.getConnection()) {
-            var metaData = connection.getMetaData();
-            var dbTableName = getUniqueTableName(metaData, batchName);
-            return extractFieldSpecsFromColumns(metaData, dbTableName);
+        try {
+            dbMetaReader.getUniqueTableNameForBatch(batchName);
+            return dbMetaReader.extractFieldSpecsFromBatchColumns(batchName);
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
         }
@@ -171,80 +177,6 @@ public class TestDbContext {
 
     private PreparedStatement prepareStatement(String sql) throws SQLException {
         return dataSource.getConnection().prepareStatement(sql);
-    }
-
-    private static int getNumFetchedRows(ResultSet rows) {
-        try {
-            rows.afterLast();
-            int numRows = rows.getRow();
-            rows.beforeFirst();
-            return numRows;
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    private Set<String> getTablesNames(DatabaseMetaData metaData) throws SQLException {
-        var tablesRows = metaData.getTables(testDbSchema, null, null, new String[]{"TABLE", "VIEW"});
-        Set<String> tableNames = new HashSet<>();
-        while (tablesRows.next()) {
-            var nameString = tablesRows.getString("TABLE_NAME");
-            tableNames.add(nameString);
-        }
-        return tableNames;
-    }
-
-    private String getUniqueTableName(DatabaseMetaData metaData, BatchName batchName) throws SQLException {
-        var matchingTables = metaData.getTables(testDbSchema, null, batchName.asString(), null);
-        int numTables = getNumFetchedRows(matchingTables);
-        if (numTables != 1) {
-            throw new RuntimeException("schema " + testDbSchema + " does not have exactly 1 table with pattern " + batchName);
-        }
-        return matchingTables.getString("TABLE_NAME");
-    }
-
-    private List<DataFieldSpec> extractFieldSpecsFromColumns(DatabaseMetaData metaData, String dbTableName) throws SQLException {
-        Set<String> uniqueColumnsNames = collectUniqueColumnsNames(metaData, dbTableName);
-        var tableDbColumns = metaData.getColumns(testDbSchema, null, dbTableName, null);
-        var fieldSpecs = new ArrayList<DataFieldSpec>();
-        while (tableDbColumns.next()) {
-            var columnName = tableDbColumns.getString("COLUMN_NAME");
-            var columnType = tableDbColumns.getInt("DATA_TYPE");
-            boolean columnNullable = Objects.equals(tableDbColumns.getString("NULLABLE"), "YES");
-            boolean columnUnique = uniqueColumnsNames.contains(columnName);
-            fieldSpecs.add(buildFieldSpec(columnName, columnType, columnNullable, columnUnique));
-        }
-        return fieldSpecs;
-    }
-
-    private DataFieldSpec buildFieldSpec(String columnName, int columnType, boolean columnNullable, boolean columnUnique) {
-        List<FieldConstraint> fieldConstraints = new ArrayList<>();
-        if (!columnNullable) {
-            fieldConstraints.add(FieldConstraint.NOT_NULL);
-        }
-        if (columnUnique) {
-            fieldConstraints.add(FieldConstraint.UNIQUE);
-        }
-        return new DataFieldSpec(FieldName.of(columnName), resolveFieldType(columnType), fieldConstraints);
-    }
-
-    private FieldType resolveFieldType(int columnSQLType) {
-        if (NUMERIC_SQL_TYPES.contains(columnSQLType)) {
-            return FieldType.NUMBER;
-        }
-        if (TEXT_SQL_TYPES.contains(columnSQLType)) {
-            return FieldType.TEXT;
-        }
-        throw new IllegalStateException("Cannot resolve FieldType for SQL type " + columnSQLType);
-    }
-
-    private Set<String> collectUniqueColumnsNames(DatabaseMetaData metaData, String dbTableName) throws SQLException {
-        var tableDbIndexes = metaData.getIndexInfo(testDbSchema, null, dbTableName, true, true);
-        Set<String> uniqueColumnsNames = new HashSet<>();
-        while(tableDbIndexes.next()) {
-            uniqueColumnsNames.add(tableDbIndexes.getString("COLUMN_NAME"));
-        }
-        return uniqueColumnsNames;
     }
 
     private DataObject collectRowDataObject(ResultSet tableData, List<DataFieldSpec> fieldSpecs) throws SQLException {

@@ -9,13 +9,11 @@ import tiem625.anonimizer.tooling.sql.SQLStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static tiem625.anonimizer.tooling.validation.Parameters.assertParamCondition;
 import static tiem625.anonimizer.tooling.validation.Parameters.assertParamPresent;
 
 class SQLStatementGenerator {
-
 
     private final SQLStatementGeneratorConfig config;
 
@@ -32,13 +30,9 @@ class SQLStatementGenerator {
         StringBuilder statementBuilder = new StringBuilder();
         appendCreateTableHeader(statementBuilder);
         appendColumnDefinitionLines(statementBuilder, fieldSpecs);
-        List<DataFieldSpec> uniqueFields = filterUniqueFieldsSpecs(fieldSpecs);
-        if (!uniqueFields.isEmpty()) {
-            appendUniqueColumnsConstraint(statementBuilder, uniqueFields.size());
-        }
         appendCreateTableFooter(statementBuilder);
         String preparedStatementText = statementBuilder.toString();
-        Object[] statementParams = collectStatementParams(batchName, fieldSpecs, uniqueFields);
+        Object[] statementParams = collectCreateTableStatementParams(batchName, fieldSpecs);
 
         return SQLStatement.forSqlAndParams(preparedStatementText, statementParams);
     }
@@ -78,31 +72,21 @@ class SQLStatementGenerator {
     }
 
     private String columnDefinitionLine(DataFieldSpec fieldSpec) {
-        return "\t? %s%s".formatted(
+        return "\t? %s%s%s".formatted(
                 config.getSQLTypeFor(fieldSpec.fieldType()),
-                fieldSpec.fieldConstraints().nullable() ? "" : " NOT NULL"
+                fieldSpec.fieldConstraints().nullable() ? "" : " NOT NULL",
+                fieldSpec.fieldConstraints().unique() ? " UNIQUE" : ""
         );
-    }
-
-    private List<DataFieldSpec> filterUniqueFieldsSpecs(List<DataFieldSpec> allFieldSpecs) {
-        return allFieldSpecs.stream().filter(spec -> spec.fieldConstraints().unique()).toList();
-    }
-
-    private void appendUniqueColumnsConstraint(StringBuilder appender, int numUniqueColumns) {
-        appender.append(", \n");
-        var placeholders = IntStream.range(0, numUniqueColumns).mapToObj(idx -> "?").collect(Collectors.joining(", "));
-        appender.append("\tUNIQUE(%s)".formatted(placeholders));
     }
 
     private void appendCreateTableFooter(StringBuilder appender) {
         appender.append("\n);");
     }
 
-    private Object[] collectStatementParams(BatchName batchName, List<DataFieldSpec> specs, List<DataFieldSpec> uniqueSpecs) {
+    private Object[] collectCreateTableStatementParams(BatchName tableName, List<DataFieldSpec> columnSpecs) {
         List<Object> params = new ArrayList<>();
-        params.add(batchName);
-        params.addAll(specsNames(specs));
-        params.addAll(specsNames(uniqueSpecs));
+        params.add(tableName);
+        params.addAll(specsNames(columnSpecs));
 
         return params.toArray();
     }

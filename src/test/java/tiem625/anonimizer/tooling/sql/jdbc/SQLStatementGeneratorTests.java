@@ -76,20 +76,20 @@ public class SQLStatementGeneratorTests {
         var statement = sqlStatementGenerator.createTableStatement(batchName, fieldSpecs);
         var statementText = statement.queryText();
 
-        Assertions.assertTrue(statementText.contains("UNIQUE("));
         Assertions.assertEquals(1, StringUtils.countMatches(statementText, " NOT NULL"));
+        Assertions.assertEquals(2, StringUtils.countMatches(statementText, " UNIQUE"));
         Assertions.assertTrue(statementText.contains("CREATE TABLE ? ("));
         Assertions.assertEquals(1, StringUtils.countMatches(statementText, " int"));
         Assertions.assertEquals(1, StringUtils.countMatches(statementText, " varchar(250)"));
 
-        // batchname + field1 + field2 + unique field1 + unique field2 = 5
-        Assertions.assertEquals(5, StringUtils.countMatches(statementText, "?"));
-        Assertions.assertEquals(5, statement.queryParameters().size());
+        // batchname + field1 + field2 = 3
+        Assertions.assertEquals(3, StringUtils.countMatches(statementText, "?"));
+        Assertions.assertEquals(3, statement.queryParameters().size());
         Assertions.assertEquals(
                 List.of(
                         batchName.asString(),
-                        fieldSpecs.get(0).fieldName().asString(), fieldSpecs.get(1).fieldName().asString(),
-                        fieldSpecs.get(0).fieldName().asString(), fieldSpecs.get(1).fieldName().asString()
+                        fieldSpecs.get(0).fieldName().asString(),
+                        fieldSpecs.get(1).fieldName().asString()
                 ),
                 statement.queryParameters().stream().map(SQLStatementParameter::value).toList()
         );

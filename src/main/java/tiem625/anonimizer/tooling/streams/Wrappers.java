@@ -1,4 +1,4 @@
-package tiem625.anonimizer.testsupport;
+package tiem625.anonimizer.tooling.streams;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
