@@ -1,7 +1,5 @@
 package tiem625.anonimizer.tooling.sql.jdbc;
 
-import io.quarkus.runtime.Shutdown;
-import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -12,7 +10,6 @@ import tiem625.anonimizer.tooling.sql.SQLStatement;
 import tiem625.anonimizer.tooling.streams.Wrappers.ThrowsCheckedFunc;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,7 +22,6 @@ import java.util.stream.Collectors;
 public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
 
     private final DataSource dataSource;
-    private Connection openConnection;
     private final SQLStatementGenerator sqlStatements;
     private final DBMetadataReader dbMetadataReader;
 
@@ -39,27 +35,6 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
         this.dbMetadataReader = new DBMetadataReader(dataSource, dbSchema);
     }
 
-    @Startup
-    void openConnection() {
-        try {
-            this.openConnection = this.dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Shutdown
-    void cleanConnection() {
-        if (this.openConnection == null) {
-            return;
-        }
-        try (var conn = this.openConnection) {
-            conn.isClosed();
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
     @Override
     public void executeBatchCreationQuery(BatchName batchName, List<DataGenerator.DataFieldSpec> fieldSpecs) {
         var statement = sqlStatements.createTableStatement(batchName, fieldSpecs);
@@ -67,7 +42,7 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
             //table name
             preparedStatement.setString(1, (String) statement.queryParameters().get(0).value());
             //column names
-            for (var idx = 1; idx < fieldSpecs.size(); idx++) {
+            for (var idx = 1; idx < statement.queryParameters().size(); idx++) {
                 preparedStatement.setString(
                         idx + 1,
                         (String) statement.queryParameters().get(idx).value());
@@ -120,7 +95,7 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
 
     private <T> T processJdbcStatement(SQLStatement sqlStatement, JdbcActions<T> actions) {
         Objects.requireNonNull(actions);
-        try (var jdbcStatement = openConnection.prepareStatement(sqlStatement.queryText())) {
+        try (var jdbcStatement = dataSource.getConnection().prepareStatement(sqlStatement.queryText())) {
             return actions.useStatement(jdbcStatement);
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
