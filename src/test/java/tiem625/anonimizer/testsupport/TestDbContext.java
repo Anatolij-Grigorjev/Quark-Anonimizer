@@ -27,7 +27,6 @@ public class TestDbContext {
     private static final Logger LOG = Logger.getLogger(TestDbContext.class.getName());
 
     private final DataSource dataSource;
-    private final String testDbSchema;
     private final TestData data = new TestData();
     private final DBMetadataReader dbMetaReader;
 
@@ -36,7 +35,6 @@ public class TestDbContext {
             @ConfigProperty(name = "anonimizer.data.schema") String testDbSchema
     ) {
         this.dataSource = dataSource;
-        this.testDbSchema = testDbSchema;
         this.dbMetaReader = new DBMetadataReader(dataSource, testDbSchema);
     }
 
@@ -157,8 +155,8 @@ public class TestDbContext {
 
     private void setStatementVarValue(PreparedStatement statement, int idx, FieldValue varValue) throws SQLException {
         switch (varValue.type()) {
-            case TEXT -> statement.setString(idx, (String) varValue.content());
-            case NUMBER -> statement.setBigDecimal(idx, contentAsBigDecimal(varValue.content()));
+            case TEXT -> statement.setString(idx + 1, (String) varValue.content());
+            case NUMBER -> statement.setBigDecimal(idx + 1, contentAsBigDecimal(varValue.content()));
         }
     }
 
