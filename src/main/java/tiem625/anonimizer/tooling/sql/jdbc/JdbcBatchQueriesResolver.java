@@ -10,6 +10,7 @@ import tiem625.anonimizer.tooling.sql.SQLStatement;
 import tiem625.anonimizer.tooling.streams.Wrappers.ThrowsCheckedFunc;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -38,18 +39,7 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
     @Override
     public void executeBatchCreationQuery(BatchName batchName, List<DataGenerator.DataFieldSpec> fieldSpecs) {
         var statement = sqlStatements.createTableStatement(batchName, fieldSpecs);
-        processJdbcStatement(statement, preparedStatement -> {
-            //table name
-            preparedStatement.setString(1, (String) statement.queryParameters().get(0).value());
-            //column names
-            for (var idx = 1; idx < statement.queryParameters().size(); idx++) {
-                preparedStatement.setString(
-                        idx + 1,
-                        (String) statement.queryParameters().get(idx).value());
-            }
-            preparedStatement.execute();
-            return null;
-        });
+        processJdbcStatement(statement);
     }
 
     @Override
@@ -118,5 +108,9 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
             case TEXT -> valuesStore::getString;
             case NUMBER -> valuesStore::getBigDecimal;
         };
+    }
+
+    private <T> void processJdbcStatement(SQLStatement statement) {
+        processJdbcStatement(statement, PreparedStatement::execute);
     }
 }

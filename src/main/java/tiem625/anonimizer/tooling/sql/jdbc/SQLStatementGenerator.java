@@ -28,7 +28,7 @@ class SQLStatementGenerator {
         assertParamCondition(fieldSpecs, specsList -> !specsList.isEmpty(), "specs list was empty");
 
         StringBuilder statementBuilder = new StringBuilder();
-        appendCreateTableHeader(statementBuilder);
+        appendCreateTableHeader(statementBuilder, batchName);
         appendColumnDefinitionLines(statementBuilder, fieldSpecs);
         appendCreateTableFooter(statementBuilder);
         String preparedStatementText = statementBuilder.toString();
@@ -60,8 +60,8 @@ class SQLStatementGenerator {
         return SQLStatement.forSqlAndParams("SELECT * FROM ? LIMIT ?;", batchName, amount);
     }
 
-    private void appendCreateTableHeader(StringBuilder appender) {
-        appender.append("CREATE TABLE ? (\n");
+    private void appendCreateTableHeader(StringBuilder appender, BatchName batchName) {
+        appender.append(String.format("CREATE TABLE %s (\n", batchName));
     }
 
     private void appendColumnDefinitionLines(StringBuilder appender, List<DataFieldSpec> fieldSpecs) {
@@ -72,7 +72,8 @@ class SQLStatementGenerator {
     }
 
     private String columnDefinitionLine(DataFieldSpec fieldSpec) {
-        return "\t? %s%s%s".formatted(
+        return "\t%s %s%s%s".formatted(
+                fieldSpec.fieldName(),
                 config.getSQLTypeFor(fieldSpec.fieldType()),
                 fieldSpec.fieldConstraints().nullable() ? "" : " NOT NULL",
                 fieldSpec.fieldConstraints().unique() ? " UNIQUE" : ""
