@@ -3,6 +3,7 @@ package tiem625.anonimizer.tooling.sql;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class SQLStatement {
 
@@ -28,6 +29,17 @@ public class SQLStatement {
 
     public List<SQLStatementParameter> queryParameters() {
         return queryParameters;
+    }
+
+    public String asSqlString() {
+        return queryText() + " | params: " + queryParameters()
+                .stream()
+                .map(SQLStatementParameter::toString).collect(Collectors.joining(", ", "[", "]"));
+    }
+
+    @Override
+    public String toString() {
+        return asSqlString();
     }
 
     private static List<SQLStatementParameter> inferQueryParams(Object... params) {

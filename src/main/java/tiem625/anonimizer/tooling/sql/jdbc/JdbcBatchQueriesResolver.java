@@ -3,6 +3,8 @@ package tiem625.anonimizer.tooling.sql.jdbc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tiem625.anonimizer.commonterms.*;
 import tiem625.anonimizer.generating.DataGenerator;
 import tiem625.anonimizer.tooling.sql.BatchQueriesResolver;
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JdbcBatchQueriesResolver.class);
 
     private final DataSource dataSource;
     private final SQLStatementGenerator sqlStatements;
@@ -85,6 +89,7 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
 
     private <T> T processJdbcStatement(SQLStatement sqlStatement, JdbcActions<T> actions) {
         Objects.requireNonNull(actions);
+        LOG.info(sqlStatement.asSqlString());
         try (var jdbcStatement = dataSource.getConnection().prepareStatement(sqlStatement.queryText())) {
             return actions.useStatement(jdbcStatement);
         } catch (SQLException ex) {

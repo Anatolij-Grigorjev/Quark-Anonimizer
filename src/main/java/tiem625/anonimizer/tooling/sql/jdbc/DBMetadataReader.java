@@ -1,5 +1,7 @@
 package tiem625.anonimizer.tooling.sql.jdbc;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tiem625.anonimizer.commonterms.BatchName;
 import tiem625.anonimizer.commonterms.FieldName;
 import tiem625.anonimizer.commonterms.FieldType;
@@ -15,6 +17,8 @@ import java.util.*;
 
 
 public class DBMetadataReader {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DBMetadataReader.class);
 
     public static final Set<Integer> NUMERIC_SQL_TYPES = Set.of(Types.NUMERIC, Types.INTEGER, Types.BIGINT, Types.TINYINT, Types.SMALLINT);
     public static final Set<Integer> TEXT_SQL_TYPES = Set.of(Types.CHAR, Types.VARCHAR, Types.NCHAR, Types.NVARCHAR, Types.LONGVARCHAR, Types.LONGNVARCHAR);
@@ -35,6 +39,7 @@ public class DBMetadataReader {
             var nameString = tablesRows.getString("TABLE_NAME");
             tableNames.add(nameString);
         }
+        LOG.info("In schema '" + dbSchema + "' found tables: " + String.join(", ", tableNames));
         return tableNames;
     }
 

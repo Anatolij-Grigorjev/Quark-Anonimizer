@@ -48,6 +48,11 @@ public class SQLStatementParameter {
         return Objects.hash(type, value);
     }
 
+    @Override
+    public String toString() {
+        return "(" + type + " " + value + ")";
+    }
+
     private static SQLStatementParameter pickInferenceRule(Object value) {
         return switch (value) {
             case String text -> new SQLStatementParameter(TEXT, text);

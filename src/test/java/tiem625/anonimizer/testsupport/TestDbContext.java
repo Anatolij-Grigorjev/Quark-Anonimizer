@@ -3,6 +3,8 @@ package tiem625.anonimizer.testsupport;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tiem625.anonimizer.commonterms.*;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.generating.DataGenerator.FieldConstraints;
@@ -17,14 +19,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @ApplicationScoped
 public class TestDbContext {
-    private static final Logger LOG = Logger.getLogger(TestDbContext.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(TestDbContext.class);
 
     private final DataSource dataSource;
     private final TestData data = new TestData();
@@ -39,11 +40,12 @@ public class TestDbContext {
     }
 
     public void dropSchemaTables() {
-        try(var connection = dataSource.getConnection()) {
+        try {
             var tableNames = dbMetaReader.getTablesNamesInSchema();
             for (String tableName : tableNames) {
-                var dropTableStatement = connection.prepareStatement("DROP TABLE IF EXISTS " + tableName);
-                dropTableStatement.execute();
+                try (var dropTableStatement = prepareStatement("DROP TABLE IF EXISTS " + tableName)) {
+                    dropTableStatement.execute();
+                }
             }
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
@@ -174,6 +176,7 @@ public class TestDbContext {
     }
 
     private PreparedStatement prepareStatement(String sql) throws SQLException {
+        LOG.info(sql);
         return dataSource.getConnection().prepareStatement(sql);
     }
 

@@ -32,9 +32,8 @@ class SQLStatementGenerator {
         appendColumnDefinitionLines(statementBuilder, fieldSpecs);
         appendCreateTableFooter(statementBuilder);
         String preparedStatementText = statementBuilder.toString();
-        Object[] statementParams = collectCreateTableStatementParams(batchName, fieldSpecs);
 
-        return SQLStatement.forSqlAndParams(preparedStatementText, statementParams);
+        return SQLStatement.forSqlAndParams(preparedStatementText);
     }
 
 
