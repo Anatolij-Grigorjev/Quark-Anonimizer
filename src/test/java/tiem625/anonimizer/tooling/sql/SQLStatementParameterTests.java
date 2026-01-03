@@ -7,8 +7,7 @@ import tiem625.anonimizer.testsupport.PrettyTestNames;
 import tiem625.anonimizer.testsupport.TestData;
 
 import static tiem625.anonimizer.tooling.sql.SQLStatementParameter.NULL_PARAMETER;
-import static tiem625.anonimizer.tooling.sql.SQLStatementParameterType.NUMBER;
-import static tiem625.anonimizer.tooling.sql.SQLStatementParameterType.TEXT;
+import static tiem625.anonimizer.tooling.sql.SQLStatementParameterType.*;
 
 @PrettyTestNames
 public class SQLStatementParameterTests {
@@ -35,9 +34,9 @@ public class SQLStatementParameterTests {
     }
 
     @Test
-    void batch_name_creates_text_param() {
+    void batch_name_creates_table_name_param() {
         var param = SQLStatementParameter.inferFrom(data.TST_BATCH);
-        Assertions.assertEquals(TEXT, param.type());
+        Assertions.assertEquals(TABLE_NAME, param.type());
         Assertions.assertEquals(data.TST_BATCH.asString(), param.value());
     }
 

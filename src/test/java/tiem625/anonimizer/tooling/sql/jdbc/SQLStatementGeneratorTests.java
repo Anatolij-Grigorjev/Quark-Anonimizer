@@ -55,7 +55,7 @@ public class SQLStatementGeneratorTests {
 
         Assertions.assertFalse(statementText.contains("UNIQUE"));
         Assertions.assertFalse(statementText.contains("NOT NULL"));
-        Assertions.assertTrue(statementText.contains("CREATE TABLE " + batchName + " ("));
+        Assertions.assertTrue(statementText.contains("CREATE TABLE `" + batchName + "` ("));
         Assertions.assertEquals(2, StringUtils.countMatches(statementText, " varchar(250)"));
         Assertions.assertTrue(statementText.contains(field1));
         Assertions.assertTrue(statementText.contains(field2));
@@ -71,7 +71,7 @@ public class SQLStatementGeneratorTests {
 
         Assertions.assertEquals(1, StringUtils.countMatches(statementText, " NOT NULL"));
         Assertions.assertEquals(2, StringUtils.countMatches(statementText, " UNIQUE"));
-        Assertions.assertTrue(statementText.contains("CREATE TABLE " + batchName + " ("));
+        Assertions.assertTrue(statementText.contains("CREATE TABLE `" + batchName + "` ("));
         Assertions.assertEquals(1, StringUtils.countMatches(statementText, " int"));
         Assertions.assertEquals(1, StringUtils.countMatches(statementText, " varchar(250)"));
         Assertions.assertTrue(statementText.contains(data.ID.asString()));

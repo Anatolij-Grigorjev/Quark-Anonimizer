@@ -60,7 +60,7 @@ class SQLStatementGenerator {
     }
 
     private void appendCreateTableHeader(StringBuilder appender, BatchName batchName) {
-        appender.append(String.format("CREATE TABLE %s (\n", batchName));
+        appender.append(String.format("CREATE TABLE `%s` (\n", batchName));
     }
 
     private void appendColumnDefinitionLines(StringBuilder appender, List<DataFieldSpec> fieldSpecs) {

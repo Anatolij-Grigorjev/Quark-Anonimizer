@@ -13,6 +13,7 @@ import tiem625.anonimizer.tooling.streams.Wrappers.ThrowsCheckedFunc;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -132,6 +133,35 @@ public class TestDbContext {
 
     /////////////IMPL HELPERS//////////
 
+    private class SingleStatementConnection implements AutoCloseable {
+
+        private final Connection connection;
+        private final PreparedStatement statement;
+
+        public SingleStatementConnection(String statementSQL) throws SQLException {
+            LOG.info(statementSQL);
+            connection = dataSource.getConnection();
+            statement = connection.prepareStatement(statementSQL);
+        }
+
+        @Override
+        public void close() throws SQLException {
+            statement.close();
+            connection.close();
+        }
+
+        public void execute() throws SQLException {
+            statement.execute();
+        }
+
+        public ResultSet executeQuery() throws SQLException {
+            return statement.executeQuery();
+        }
+
+        public void executeUpdate() throws SQLException {
+            statement.executeUpdate();
+        }
+    }
 
     private String buildInsertStatement(BatchName batchName, ArrayList<FieldName> fieldsNames) {
         Collector<CharSequence, ?, String> joinParamsList = Collectors.joining(", ", "(", ")");
@@ -143,12 +173,12 @@ public class TestDbContext {
                 ";";
     }
 
-    private void setStatementVars(PreparedStatement statement, List<FieldName> varsSequence, DataObject vars) {
+    private void setStatementVars(SingleStatementConnection wrapper, List<FieldName> varsSequence, DataObject vars) {
         IntStream.range(0, varsSequence.size()).forEachOrdered(idx -> {
             var varName = varsSequence.get(idx);
             var varValue = vars.getValue(varName);
             try {
-                setStatementVarValue(statement, idx, varValue);
+                setStatementVarValue(wrapper.statement, idx, varValue);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -175,9 +205,8 @@ public class TestDbContext {
         throw new IllegalStateException("Cannot BigDecimal content of type " + content.getClass());
     }
 
-    private PreparedStatement prepareStatement(String sql) throws SQLException {
-        LOG.info(sql);
-        return dataSource.getConnection().prepareStatement(sql);
+    private SingleStatementConnection prepareStatement(String sql) throws SQLException {
+        return new SingleStatementConnection(sql);
     }
 
     private DataObject collectRowDataObject(ResultSet tableData, List<DataFieldSpec> fieldSpecs) throws SQLException {

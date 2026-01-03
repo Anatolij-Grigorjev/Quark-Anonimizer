@@ -4,6 +4,7 @@ public enum SQLStatementParameterType {
 
     NUMBER,
     TEXT,
-    NULL
+    NULL,
+    TABLE_NAME
     ;
 }

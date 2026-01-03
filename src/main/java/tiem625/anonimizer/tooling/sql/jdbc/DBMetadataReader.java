@@ -40,6 +40,7 @@ public class DBMetadataReader {
             tableNames.add(nameString);
         }
         LOG.info("In schema '{}' found tables: {}", dbSchema, String.join(", ", tableNames));
+        metaData.getConnection().close();
         return tableNames;
     }
 
@@ -50,6 +51,7 @@ public class DBMetadataReader {
         if (numTables != 1) {
             throw new RuntimeException("schema " + dbSchema + " does not have exactly 1 table with pattern " + batchName);
         }
+        metaData.getConnection().close();
         return matchingTables.getString("TABLE_NAME");
     }
 
@@ -65,6 +67,7 @@ public class DBMetadataReader {
             boolean columnUnique = uniqueColumnsNames.contains(columnName);
             fieldSpecs.add(buildFieldSpec(columnName, columnType, columnNullable, columnUnique));
         }
+        metaData.getConnection().close();
         return fieldSpecs;
     }
 

@@ -90,11 +90,16 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
     private <T> T processJdbcStatement(SQLStatement sqlStatement, JdbcActions<T> actions) {
         Objects.requireNonNull(actions);
         LOG.info(sqlStatement.asSqlString());
-        try (var jdbcStatement = dataSource.getConnection().prepareStatement(sqlStatement.queryText())) {
-            return actions.useStatement(jdbcStatement);
+
+        try (var dbConnection = dataSource.getConnection()) {
+            try (var jdbcStatement = dbConnection.prepareStatement(sqlStatement.queryText())) {
+                return actions.useStatement(jdbcStatement);
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            } // close jdbcStatement
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
-        }
+        } // close dbConnection
     }
 
     private DataObject collectRowDataObject(ResultSet tableData, List<DataGenerator.DataFieldSpec> fieldSpecs) throws SQLException {

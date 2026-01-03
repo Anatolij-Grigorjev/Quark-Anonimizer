@@ -57,8 +57,8 @@ public class SQLStatementParameter {
         return switch (value) {
             case String text -> new SQLStatementParameter(TEXT, text);
             case Number num -> new SQLStatementParameter(NUMBER, num);
+            case BatchName batchName -> new SQLStatementParameter(TABLE_NAME, batchName.asString());
             case Amount amount -> pickInferenceRule(amount.asNumber());
-            case BatchName batchName -> pickInferenceRule(batchName.asString());
             case FieldName fieldName -> pickInferenceRule(fieldName.asString());
             default -> throw new IllegalArgumentException("Cannot infer param of type " + value.getClass());
         };
