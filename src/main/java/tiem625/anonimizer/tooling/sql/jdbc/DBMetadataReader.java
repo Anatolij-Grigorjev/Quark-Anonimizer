@@ -49,10 +49,12 @@ public class DBMetadataReader {
         var matchingTables = metaData.getTables(dbSchema, null, batchName.asString(), null);
         int numTables = getNumFetchedRows(matchingTables);
         if (numTables != 1) {
-            throw new RuntimeException("schema " + dbSchema + " does not have exactly 1 table with pattern " + batchName);
+            throw new RuntimeException(String.format("schema `%s` does not have exactly 1 table with pattern `%s`, it has: %d", dbSchema, batchName, numTables));
         }
+        matchingTables.next();
+        var tableName = matchingTables.getString("TABLE_NAME");
         metaData.getConnection().close();
-        return matchingTables.getString("TABLE_NAME");
+        return tableName;
     }
 
     public List<DataFieldSpec> extractFieldSpecsFromBatchColumns(BatchName batchName) throws SQLException {
@@ -63,7 +65,7 @@ public class DBMetadataReader {
         while (tableDbColumns.next()) {
             var columnName = tableDbColumns.getString("COLUMN_NAME");
             var columnType = tableDbColumns.getInt("DATA_TYPE");
-            boolean columnNullable = Objects.equals(tableDbColumns.getString("NULLABLE"), "YES");
+            boolean columnNullable = Objects.equals(tableDbColumns.getString("NULLABLE"), "1");
             boolean columnUnique = uniqueColumnsNames.contains(columnName);
             fieldSpecs.add(buildFieldSpec(columnName, columnType, columnNullable, columnUnique));
         }
@@ -86,8 +88,11 @@ public class DBMetadataReader {
 
     private static int getNumFetchedRows(ResultSet rows) {
         try {
-            rows.afterLast();
-            int numRows = rows.getRow();
+            rows.beforeFirst();
+            int numRows = 0;
+            while(rows.next()) {
+                numRows++;
+            }
             rows.beforeFirst();
             return numRows;
         } catch (SQLException ex) {

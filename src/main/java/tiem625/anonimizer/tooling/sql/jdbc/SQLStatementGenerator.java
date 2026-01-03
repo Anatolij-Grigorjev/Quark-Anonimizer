@@ -2,11 +2,9 @@ package tiem625.anonimizer.tooling.sql.jdbc;
 
 import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.commonterms.BatchName;
-import tiem625.anonimizer.commonterms.FieldName;
 import tiem625.anonimizer.generating.DataGenerator.DataFieldSpec;
 import tiem625.anonimizer.tooling.sql.SQLStatement;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,14 +38,14 @@ class SQLStatementGenerator {
     public SQLStatement checkTableExistsStatement(BatchName batchName) {
         assertParamPresent(batchName, "got null batchName");
 
-        return SQLStatement.forSqlAndParams("SELECT 1 FROM ?;", batchName);
+        return SQLStatement.forSqlAndParams(String.format("SELECT 1 FROM `%s`;", batchName));
     }
 
 
     public SQLStatement getTableSizeStatement(BatchName batchName) {
         assertParamPresent(batchName, "got null batchName");
 
-        return SQLStatement.forSqlAndParams("SELECT COUNT(*) FROM ?;", batchName);
+        return SQLStatement.forSqlAndParams(String.format("SELECT COUNT(*) FROM `%s`;", batchName));
     }
 
 
@@ -56,7 +54,7 @@ class SQLStatementGenerator {
         assertParamPresent(amount, "got null amount");
         assertParamCondition(amount, thisAmount -> thisAmount.asNumber() > 0, "passed amount is not positive");
 
-        return SQLStatement.forSqlAndParams("SELECT * FROM ? LIMIT ?;", batchName, amount);
+        return SQLStatement.forSqlAndParams(String.format("SELECT * FROM `%s` LIMIT ?;", batchName), amount);
     }
 
     private void appendCreateTableHeader(StringBuilder appender, BatchName batchName) {
@@ -81,17 +79,5 @@ class SQLStatementGenerator {
 
     private void appendCreateTableFooter(StringBuilder appender) {
         appender.append("\n);");
-    }
-
-    private Object[] collectCreateTableStatementParams(BatchName tableName, List<DataFieldSpec> columnSpecs) {
-        List<Object> params = new ArrayList<>();
-        params.add(tableName);
-        params.addAll(specsNames(columnSpecs));
-
-        return params.toArray();
-    }
-
-    private List<FieldName> specsNames(List<DataFieldSpec> specs) {
-        return specs.stream().map(DataFieldSpec::fieldName).toList();
     }
 }

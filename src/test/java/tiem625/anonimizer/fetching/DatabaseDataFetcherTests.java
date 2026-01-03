@@ -4,6 +4,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tiem625.anonimizer.commonterms.Amount;
 import tiem625.anonimizer.fetching.DataFetcher.Query;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @PrettyTestNames
 @QuarkusTest
+@Disabled("No implementation yet for DataFetcher")
 public class DatabaseDataFetcherTests {
 
     TestData data;

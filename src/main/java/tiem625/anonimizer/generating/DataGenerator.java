@@ -8,6 +8,7 @@ import tiem625.anonimizer.commonterms.FieldType;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public interface DataGenerator {
@@ -67,6 +68,25 @@ public interface DataGenerator {
 
         public boolean unique() {
             return constraints.contains(FieldConstraint.UNIQUE);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            FieldConstraints that = (FieldConstraints) o;
+            return Objects.equals(constraints, that.constraints);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(constraints);
+        }
+
+        @Override
+        public String toString() {
+            return "FieldConstraints{" +
+                    "constraints=" + constraints +
+                    '}';
         }
     }
 }

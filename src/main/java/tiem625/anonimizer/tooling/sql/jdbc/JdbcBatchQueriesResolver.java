@@ -43,14 +43,22 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
     @Override
     public void executeBatchCreationQuery(BatchName batchName, List<DataGenerator.DataFieldSpec> fieldSpecs) {
         var statement = sqlStatements.createTableStatement(batchName, fieldSpecs);
-        processJdbcStatement(statement);
+        try {
+            processJdbcStatement(statement);
+        } catch (RuntimeException ex) {
+            var sqlEx = ex.getCause();
+            if (sqlEx instanceof SQLException && ((SQLException) sqlEx).getSQLState().startsWith("42")) {
+                throw new IllegalStateException(String.format("Table %s already exists!", batchName), ex);
+            } else {
+                throw ex;
+            }
+        }
     }
 
     @Override
     public boolean executeCheckBatchExistsQuery(BatchName batchName) {
         var statement = sqlStatements.checkTableExistsStatement(batchName);
         return processJdbcStatement(statement, preparedStatement -> {
-            preparedStatement.setString(1, (String) statement.queryParameters().get(0).value());
             try {
                 preparedStatement.execute();
                 return true;
@@ -64,9 +72,13 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
     public Amount executeFetchBatchSizeQuery(BatchName batchName) {
         var statement = sqlStatements.getTableSizeStatement(batchName);
         return processJdbcStatement(statement, preparedStatement -> {
-            preparedStatement.setString(1, (String) statement.queryParameters().get(0).value());
             var results = preparedStatement.executeQuery();
-            return Amount.of(results.getInt(1));
+            var canReadCount = results.next();
+            if (canReadCount) {
+                return Amount.of(results.getInt(1));
+            } else {
+                return Amount.NONE;
+            }
         });
     }
 
@@ -75,8 +87,7 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
         var statement = sqlStatements.fetchTableRowsStatement(batchName, amount);
         return processJdbcStatement(statement, preparedStatement -> {
             var batchFieldSpecs = dbMetadataReader.extractFieldSpecsFromBatchColumns(batchName);
-            preparedStatement.setString(1, (String) statement.queryParameters().get(0).value());
-            preparedStatement.setInt(2, (Integer) statement.queryParameters().get(1).value());
+            preparedStatement.setInt(1, (Integer) statement.queryParameters().get(0).value());
 
             var resultsCursor = preparedStatement.executeQuery();
             var batchObjects = new ArrayList<DataObject>();

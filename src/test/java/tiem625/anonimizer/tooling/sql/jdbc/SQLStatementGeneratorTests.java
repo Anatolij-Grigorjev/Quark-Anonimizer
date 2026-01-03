@@ -91,9 +91,8 @@ public class SQLStatementGeneratorTests {
 
         var statement = sqlStatementGenerator.checkTableExistsStatement(batchName);
 
-        Assertions.assertEquals("SELECT 1 FROM ?;", statement.queryText());
-        Assertions.assertEquals(1, statement.queryParameters().size());
-        Assertions.assertEquals(data.TST_BATCH.asString(), statement.queryParameters().get(0).value());
+        Assertions.assertEquals(String.format("SELECT 1 FROM `%s`;", batchName.asString()), statement.queryText());
+        Assertions.assertEquals(0, statement.queryParameters().size());
     }
 
     @Test
@@ -109,9 +108,8 @@ public class SQLStatementGeneratorTests {
 
         var statement = sqlStatementGenerator.getTableSizeStatement(batchName);
 
-        Assertions.assertEquals("SELECT COUNT(*) FROM ?;", statement.queryText());
-        Assertions.assertEquals(1, statement.queryParameters().size());
-        Assertions.assertEquals(data.TST_BATCH.asString(), statement.queryParameters().get(0).value());
+        Assertions.assertEquals(String.format("SELECT COUNT(*) FROM `%s`;", batchName.asString()), statement.queryText());
+        Assertions.assertEquals(0, statement.queryParameters().size());
     }
 
     @Test
@@ -132,9 +130,8 @@ public class SQLStatementGeneratorTests {
 
         var statement = sqlStatementGenerator.fetchTableRowsStatement(batchName, amount);
 
-        Assertions.assertEquals("SELECT * FROM ? LIMIT ?;", statement.queryText());
-        Assertions.assertEquals(2, statement.queryParameters().size());
-        Assertions.assertEquals(data.TST_BATCH.asString(), statement.queryParameters().get(0).value());
-        Assertions.assertEquals(amount.asNumber(), statement.queryParameters().get(1).value());
+        Assertions.assertEquals(String.format("SELECT * FROM `%s` LIMIT ?;", batchName.asString()), statement.queryText());
+        Assertions.assertEquals(1, statement.queryParameters().size());
+        Assertions.assertEquals(amount.asNumber(), statement.queryParameters().get(0).value());
     }
 }
