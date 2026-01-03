@@ -39,7 +39,7 @@ public class DBMetadataReader {
             var nameString = tablesRows.getString("TABLE_NAME");
             tableNames.add(nameString);
         }
-        LOG.info("In schema '" + dbSchema + "' found tables: " + String.join(", ", tableNames));
+        LOG.info("In schema '{}' found tables: {}", dbSchema, String.join(", ", tableNames));
         return tableNames;
     }
 
