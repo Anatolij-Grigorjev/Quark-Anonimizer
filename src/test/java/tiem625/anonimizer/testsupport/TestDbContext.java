@@ -117,7 +117,7 @@ public class TestDbContext {
         if (rows.isEmpty()) {
             return;
         }
-        var orderedFieldsNames = new ArrayList<>(rows.getFirst().fieldNames());
+        var orderedFieldsNames = new ArrayList<>(rows.get(0).fieldNames());
         String insertStatementTemplate = buildInsertStatement(batchName, orderedFieldsNames);
         for(var row: rows) {
             try(var statement = prepareStatement(insertStatementTemplate)) {
