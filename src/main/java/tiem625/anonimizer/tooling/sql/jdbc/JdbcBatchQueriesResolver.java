@@ -71,15 +71,24 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
     @Override
     public Amount executeFetchBatchSizeQuery(BatchName batchName) {
         var statement = sqlStatements.getTableSizeStatement(batchName);
-        return processJdbcStatement(statement, preparedStatement -> {
-            var results = preparedStatement.executeQuery();
-            var canReadCount = results.next();
-            if (canReadCount) {
-                return Amount.of(results.getInt(1));
+        try {
+            return processJdbcStatement(statement, preparedStatement -> {
+                var results = preparedStatement.executeQuery();
+                var canReadCount = results.next();
+                if (canReadCount) {
+                    return Amount.of(results.getInt(1));
+                } else {
+                    return Amount.NONE;
+                }
+            });
+        } catch (RuntimeException ex) {
+            var sqlEx = ex.getCause();
+            if (sqlEx instanceof SQLException && ((SQLException) sqlEx).getSQLState().startsWith("42")) {
+                throw new IllegalStateException(String.format("Table %s already exists!", batchName), ex);
             } else {
-                return Amount.NONE;
+                throw ex;
             }
-        });
+        }
     }
 
     @Override

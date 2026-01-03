@@ -54,13 +54,18 @@ public class SQLStatementParameter {
     }
 
     private static SQLStatementParameter pickInferenceRule(Object value) {
-        return switch (value) {
-            case String text -> new SQLStatementParameter(TEXT, text);
-            case Number num -> new SQLStatementParameter(NUMBER, num);
-            case BatchName batchName -> new SQLStatementParameter(TABLE_NAME, batchName.asString());
-            case Amount amount -> pickInferenceRule(amount.asNumber());
-            case FieldName fieldName -> pickInferenceRule(fieldName.asString());
-            default -> throw new IllegalArgumentException("Cannot infer param of type " + value.getClass());
-        };
+        if (value instanceof String text) {
+            return new SQLStatementParameter(TEXT, text);
+        } else if (value instanceof Number num) {
+            return new SQLStatementParameter(NUMBER, num);
+        } else if (value instanceof BatchName batchName) {
+            return new SQLStatementParameter(TABLE_NAME, batchName.asString());
+        } else if (value instanceof Amount amount) {
+            return pickInferenceRule(amount.asNumber());
+        } else if (value instanceof FieldName fieldName) {
+            return pickInferenceRule(fieldName.asString());
+        } else {
+            throw new IllegalArgumentException("Cannot infer param of type " + value.getClass());
+        }
     }
 }

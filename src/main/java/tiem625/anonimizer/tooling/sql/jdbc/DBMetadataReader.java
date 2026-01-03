@@ -32,45 +32,48 @@ public class DBMetadataReader {
     }
 
     public Set<String> getTablesNamesInSchema() throws SQLException {
-        var metaData = getConnectionMeta();
-        var tablesRows = metaData.getTables(dbSchema, null, null, new String[]{"TABLE", "VIEW"});
-        Set<String> tableNames = new HashSet<>();
-        while (tablesRows.next()) {
-            var nameString = tablesRows.getString("TABLE_NAME");
-            tableNames.add(nameString);
+        try (var dbConnection = dataSource.getConnection()) {
+            var metaData = dbConnection.getMetaData();
+            var tablesRows = metaData.getTables(dbSchema, null, null, new String[]{"TABLE", "VIEW"});
+            Set<String> tableNames = new HashSet<>();
+            while (tablesRows.next()) {
+                var nameString = tablesRows.getString("TABLE_NAME");
+                tableNames.add(nameString);
+            }
+            LOG.info("In schema '{}' found tables: {}", dbSchema, String.join(", ", tableNames));
+            return tableNames;
         }
-        LOG.info("In schema '{}' found tables: {}", dbSchema, String.join(", ", tableNames));
-        metaData.getConnection().close();
-        return tableNames;
     }
 
     public String getUniqueTableNameForBatch(BatchName batchName) throws SQLException {
-        var metaData = getConnectionMeta();
-        var matchingTables = metaData.getTables(dbSchema, null, batchName.asString(), null);
-        int numTables = getNumFetchedRows(matchingTables);
-        if (numTables != 1) {
-            throw new RuntimeException(String.format("schema `%s` does not have exactly 1 table with pattern `%s`, it has: %d", dbSchema, batchName, numTables));
+        try (var dbConnection = dataSource.getConnection()) {
+            var metaData = dbConnection.getMetaData();
+            var matchingTables = metaData.getTables(dbSchema, null, batchName.asString(), null);
+            int numTables = getNumFetchedRows(matchingTables);
+            if (numTables != 1) {
+                throw new RuntimeException(String.format("schema `%s` does not have exactly 1 table with pattern `%s`, it has: %d", dbSchema, batchName, numTables));
+            }
+            matchingTables.next();
+            var tableName = matchingTables.getString("TABLE_NAME");
+            return tableName;
         }
-        matchingTables.next();
-        var tableName = matchingTables.getString("TABLE_NAME");
-        metaData.getConnection().close();
-        return tableName;
     }
 
     public List<DataFieldSpec> extractFieldSpecsFromBatchColumns(BatchName batchName) throws SQLException {
-        var metaData = getConnectionMeta();
-        Set<String> uniqueColumnsNames = collectBatchUniqueColumnsNames(metaData, batchName);
-        var tableDbColumns = metaData.getColumns(dbSchema, null, batchName.asString(), null);
-        var fieldSpecs = new ArrayList<DataFieldSpec>();
-        while (tableDbColumns.next()) {
-            var columnName = tableDbColumns.getString("COLUMN_NAME");
-            var columnType = tableDbColumns.getInt("DATA_TYPE");
-            boolean columnNullable = Objects.equals(tableDbColumns.getString("NULLABLE"), "1");
-            boolean columnUnique = uniqueColumnsNames.contains(columnName);
-            fieldSpecs.add(buildFieldSpec(columnName, columnType, columnNullable, columnUnique));
+        try (var dbConnection = dataSource.getConnection()) {
+            var metaData = dbConnection.getMetaData();
+            Set<String> uniqueColumnsNames = collectBatchUniqueColumnsNames(metaData, batchName);
+            var tableDbColumns = metaData.getColumns(dbSchema, null, batchName.asString(), null);
+            var fieldSpecs = new ArrayList<DataFieldSpec>();
+            while (tableDbColumns.next()) {
+                var columnName = tableDbColumns.getString("COLUMN_NAME");
+                var columnType = tableDbColumns.getInt("DATA_TYPE");
+                boolean columnNullable = Objects.equals(tableDbColumns.getString("NULLABLE"), "1");
+                boolean columnUnique = uniqueColumnsNames.contains(columnName);
+                fieldSpecs.add(buildFieldSpec(columnName, columnType, columnNullable, columnUnique));
+            }
+            return fieldSpecs;
         }
-        metaData.getConnection().close();
-        return fieldSpecs;
     }
 
     private Set<String> collectBatchUniqueColumnsNames(DatabaseMetaData metaData, BatchName batchName) throws SQLException {
@@ -80,10 +83,6 @@ public class DBMetadataReader {
             uniqueColumnsNames.add(tableDbIndexes.getString("COLUMN_NAME"));
         }
         return uniqueColumnsNames;
-    }
-
-    private DatabaseMetaData getConnectionMeta() throws SQLException {
-        return dataSource.getConnection().getMetaData();
     }
 
     private static int getNumFetchedRows(ResultSet rows) {
