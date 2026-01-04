@@ -84,9 +84,7 @@ public interface DataGenerator {
 
         @Override
         public String toString() {
-            return "FieldConstraints{" +
-                    "constraints=" + constraints +
-                    '}';
+            return "FieldConstraints{" + constraints + '}';
         }
     }
 }

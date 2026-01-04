@@ -65,6 +65,7 @@ public class TestDbContext {
     public Amount getBatchRecordsCount(BatchName batchName) {
         try (var statement = prepareStatement("SELECT COUNT(*) FROM " + batchName)) {
             ResultSet rowsCount = statement.executeQuery();
+            rowsCount.next();
             int numericCount = rowsCount.getInt(1);
             return Amount.of(numericCount);
         } catch (SQLException sqlEx) {
