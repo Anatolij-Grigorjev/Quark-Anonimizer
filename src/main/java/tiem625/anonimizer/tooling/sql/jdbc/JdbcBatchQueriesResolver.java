@@ -46,12 +46,7 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
         try {
             processJdbcStatement(statement);
         } catch (RuntimeException ex) {
-            var sqlEx = ex.getCause();
-            if (sqlEx instanceof SQLException && ((SQLException) sqlEx).getSQLState().startsWith("42")) {
-                throw new IllegalStateException(String.format("Table %s already exists!", batchName), ex);
-            } else {
-                throw ex;
-            }
+            throw tryWrapJdbcErrorIllegalState(ex, String.format("Table `%s` already exists!", batchName));
         }
     }
 
@@ -82,12 +77,7 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
                 }
             });
         } catch (RuntimeException ex) {
-            var sqlEx = ex.getCause();
-            if (sqlEx instanceof SQLException && ((SQLException) sqlEx).getSQLState().startsWith("42")) {
-                throw new IllegalStateException(String.format("Table %s already exists!", batchName), ex);
-            } else {
-                throw ex;
-            }
+            throw tryWrapJdbcErrorIllegalState(ex, String.format("Table `%s` doesn't exist!", batchName));
         }
     }
 
@@ -142,5 +132,17 @@ public class JdbcBatchQueriesResolver implements BatchQueriesResolver {
 
     private <T> void processJdbcStatement(SQLStatement statement) {
         processJdbcStatement(statement, PreparedStatement::execute);
+    }
+
+    private RuntimeException tryWrapJdbcErrorIllegalState(RuntimeException error, String message) {
+        var sqlEx = error.getCause();
+        if (!(sqlEx instanceof SQLException)) {
+            return error;
+        }
+        if (((SQLException) sqlEx).getSQLState().startsWith("42")) {
+            return new IllegalStateException(message, error);
+        } else {
+            return error;
+        }
     }
 }
